@@ -12,7 +12,7 @@ Determine whether **The Burr** produces genuine proxy–patron entrapment and po
 - export the replay JSON at the end;
 - 10-minute post-game discussion.
 
-A two-player Belarus–Russia session with AI support is useful as a bridge test, but it does not replace the five-player witness.
+A two-player Belarus–Russia session with NPC support is useful as a bridge test, but it does not replace the five-player witness. A one-human Solo command run is useful for onboarding, pacing, and mechanical regression; it is a synthetic diagnostic, not evidence of human bargaining or balance.
 
 ## Do not explain before play
 

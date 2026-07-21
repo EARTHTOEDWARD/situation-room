@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Situation Room: The Burr — a five-role pass-and-play crisis bargaining prototype.">
+  <meta name="description" content="Situation Room: The Burr — a five-role solo or pass-and-play crisis bargaining prototype.">
   <title>Situation Room — The Burr</title>
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -16,7 +16,7 @@
     </a>
     <div class="top-actions">
       <button class="micro" id="btnHow" type="button">How to Play</button>
-      <button class="micro accent" id="btnShowMe" type="button">Show Me a Round</button>
+      <button class="micro accent" id="btnShowMe" type="button">Observer Demo</button>
       <div class="status-box mono">
         SCENARIO <b>THE BURR</b><br>
         <span id="topStatus">SETUP · 5 ROLES · 6 ROUNDS</span>
@@ -33,9 +33,10 @@
           <p>A lethal border incident lets a small proxy manufacture commitment from a larger patron. Every government must manage the world outside and the factions inside its own situation room.</p>
           <div class="formula mono">1 ladder · 2 actions · 3 factions · 4 assets · 6 rounds</div>
           <div class="hero-actions">
-            <button class="primary" id="presetFive" type="button">Five-player table</button>
+            <button class="primary" id="presetSolo" type="button">Solo command</button>
+            <button class="secondary" id="presetFive" type="button">Five-player table</button>
             <button class="secondary" id="presetTwo" type="button">Two-player quick start</button>
-            <button class="secondary" id="presetObserver" type="button">Observer / all AI</button>
+            <button class="secondary" id="presetObserver" type="button">Observer / all NPCs</button>
           </div>
         </div>
         <aside class="briefing-card">
@@ -48,14 +49,17 @@
         </aside>
       </div>
 
-      <div class="section-label mono">Assign seats — human players use pass-and-play; AI fills the rest</div>
+      <div class="section-label mono">Assign seats — choose one human for solo; NPCs fill the rest</div>
       <div id="roleSetup" class="role-setup"></div>
 
       <div class="setup-footer">
         <label class="seed-field mono">REPLAY SEED
           <input id="seedInput" type="text" value="BURR-001" maxlength="32" autocomplete="off">
         </label>
-        <div class="setup-note">Current-round plans remain sealed until simultaneous resolution. The privacy screen is social, not cryptographic.</div>
+        <label class="solo-role-field mono" id="soloRoleField" hidden>YOUR SOLO ROLE
+          <select id="soloRoleSelect" aria-label="Choose your solo role"></select>
+        </label>
+        <div class="setup-note" id="setupNote">Current-round plans remain sealed until simultaneous resolution. The privacy screen is social, not cryptographic.</div>
         <button class="primary launch" id="btnStart" type="button">Open the table</button>
       </div>
     </section>
@@ -63,7 +67,7 @@
     <section id="gameScreen" class="game-screen" hidden>
       <div class="crisis-brief">
         <span class="tag mono">PUBLIC BOARD</span>
-        <p><b>Table talk is open.</b> Public actions appear here after resolution. Private actions are visible only in the sending and receiving situation rooms unless they leak.</p>
+        <p id="crisisBriefText"><b>Table talk is open.</b> Public actions appear here after resolution. Private actions are visible only in the sending and receiving situation rooms unless they leak.</p>
       </div>
 
       <div class="dashboard">
@@ -107,7 +111,7 @@
         <div class="round-copy">
           <span class="kicker mono">ROUND CONTROL</span>
           <h2 id="roundHeadline">Round 1 — negotiation window</h2>
-          <p id="roundInstruction">Discuss openly. When ready, begin sealed planning. Each human player will receive the device in turn; AI plans are generated but remain hidden.</p>
+          <p id="roundInstruction">Discuss openly. When ready, begin sealed planning. Each human player will receive the device in turn; NPC plans are generated but remain hidden.</p>
         </div>
         <div class="round-actions">
           <button class="secondary" id="btnTimer" type="button">Start 2:00 table timer</button>

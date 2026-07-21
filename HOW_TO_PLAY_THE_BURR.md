@@ -2,8 +2,8 @@
 
 ## Players and time
 
-- **2–5 human players**; AI fills unused roles
-- approximately **45–90 minutes** for a first six-round game
+- **1–5 human players**; rules-based NPCs fill unused roles
+- six rounds; human completion time has not yet been measured in a playtest
 - one shared laptop or tablet
 - optional phones or paper for private notes
 
@@ -49,19 +49,22 @@ The privacy screen is social rather than cryptographic. Other players should loo
 
 ## Set up
 
-Choose one of three presets:
+Choose one of four presets:
 
+- **Solo command:** one human role and four NPCs; the United Nations is selected initially, but you can choose any role.
 - **Five-player table:** all roles human.
-- **Two-player quick start:** Belarus and Russia human; the other three roles use AI.
-- **Observer:** all roles use AI.
+- **Two-player quick start:** Belarus and Russia human; the other three roles use NPCs.
+- **Observer:** all roles use NPCs.
 
-You may change any individual seat between human and AI. Enter a replay seed to make engine randomness reproducible.
+You may change any individual seat between human and NPC. Enter a replay seed to make engine randomness reproducible.
+
+The NPCs are deterministic, scenario-specific decision policies running entirely in the browser. They carry the changing ladder, commitments, faction pressure, and asset clocks forward; they do not use an external language model or parse free-form conversation.
 
 ## Each round
 
-### 1. Open negotiation
+### 1. Open negotiation or solo review
 
-Players may speak openly. They can also step away from the table for private discussion. Verbal promises matter politically, but the engine treats them as non-binding until encoded through actions.
+At a human table, players may speak openly or step away for private discussion. In Solo command, read the public board and your role’s inbox for the signals left by earlier rounds. Verbal or imagined promises are non-binding until encoded through actions.
 
 ### 2. Sealed private planning
 
@@ -73,7 +76,7 @@ Every role chooses:
 - **one public action**;
 - **one private action**, with a target when required.
 
-AI choices are generated before human planning begins and remain sealed.
+NPC choices are generated before human planning begins and remain sealed.
 
 ### 3. Simultaneous resolution
 
@@ -127,22 +130,15 @@ Authoritarian roles pay lower immediate public audience costs than democratic or
 
 ## Secret diplomacy and face-saving
 
-Private actions can match in the same round. Examples:
-
-- Belarus offers patrol withdrawal for a Russian regime-security guarantee;
-- Russia offers demobilisation for a private US no-permanent-deployment assurance;
-- the EU offers to delay sanctions if an inquiry is accepted;
-- the UN supplies escrow, inspection, or a secret annex.
+Private actions can match in the same round: restraint can be exchanged for conditional protection, demobilisation for a deployment assurance, or delayed sanctions for a verified inquiry. The UN can supply escrow, inspection, or a secret annex.
 
 UN mechanisms can let both sides move simultaneously and can reopen a welded rung. Secret concessions avoid immediate public cost but may later leak.
 
-## Worked first-round example
+## Worked mechanism example
 
-Belarus publicly declares the crossing existential even though the crossing is truly negotiable. Privately it offers withdrawal for the thing it actually values: Russian backing and regime survival.
+Suppose one actor publicly overclaims a negotiable issue while privately offering restraint in exchange for protection. The bargain forms only if the intended counterpart independently chooses the matching conditional offer in the same round. A match can lower the ladder while increasing entanglement and creating a classified concession with future leak risk.
 
-Russia can choose a matching conditional guarantee. If it does, the deal forms during simultaneous resolution. Belarus receives protection; Russia avoids a blank cheque; the ladder can descend. But Russia–Belarus entanglement rises, and the classified concession becomes a possible media leak.
-
-The United States may simultaneously offer a no-permanent-deployment assurance. That offer does **not** automatically become a deal if Russia used its single private action on Belarus. An unmatched feeler is still information: the next round begins with a new private signal but without a completed bargain.
+A second actor’s simultaneous private feeler does **not** automatically become a deal if its counterpart used its single private action elsewhere. An unmatched feeler is still information: the next round begins with a new private signal but without a completed bargain.
 
 ## End of game
 
@@ -156,3 +152,7 @@ The debrief reveals:
 - internal faction events;
 - role scores;
 - shared world viability.
+
+## Solo-mode evidence boundary
+
+Automated solo-path checks show that a one-human-seat game can complete the six-round state/action loop, that the human-seat choice can make or break a matching bargain, and that the engine carries consequences forward reproducibly. This remains a synthetic diagnostic until a person completes a timed solo playtest; it is not evidence of human bargaining quality, strategic intelligence, game balance, or real-world geopolitical prediction.

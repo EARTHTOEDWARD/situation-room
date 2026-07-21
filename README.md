@@ -12,12 +12,13 @@ This is a public alpha. Please attach the exported replay JSON when reporting a 
 
 ## Playable modes
 
-### The Burr — multiplayer vertical slice
+### The Burr — solo and multiplayer vertical slice
 
 `the-burr/index.html`  
 Standalone copy: `situation-room-the-burr.html`
 
-- 2–5 human players; AI fills unused seats
+- 1–5 human players; deterministic, rules-based NPCs fill unused seats
+- one-click **Solo command**, defaulting to the United Nations; any role can be selected
 - five roles: Belarus, Russia, United States, European Union, United Nations
 - pass-and-play privacy screen
 - one public and one private action per role per round
@@ -31,6 +32,8 @@ Standalone copy: `situation-room-the-burr.html`
 - six-round crisis window
 - deterministic replay seed and replay JSON export
 - an observer-mode guided first round
+
+The NPC engine is local, offline-capable, and seeded for reproducible replays. It uses authored role policies that respond to the evolving ladder, public pressure, commitments, asset clocks, and role state; it is not an external language model or strategic-search system.
 
 ### Gulf 2026 — solo training
 
@@ -62,9 +65,9 @@ Convenience launchers:
 
 ## The Burr round loop
 
-1. **Open negotiation.** Players may talk publicly or step aside for real-world private discussion.
+1. **Open negotiation or solo review.** A table may talk publicly or step aside for real-world private discussion. A solo player instead reads the public board and their role’s private inbox.
 2. **Sealed planning.** Pass the device through each human situation room. Choose one internal faction, one public action, and one private action.
-3. **Simultaneous resolution.** The engine resolves public pressure, matching backchannel intentions, accidents, faction events, expiring claims, asset decay, and leaks.
+3. **Simultaneous resolution.** The engine resolves the human and NPC plans together: public pressure, matching backchannel intentions, accidents, faction events, expiring claims, asset decay, and leaks.
 4. **Structural carry-over.** The next round inherits commitments, welded rungs, depleted clocks, audience costs, entanglement, and secret bargains.
 
 The first multiplayer complexity boundary is deliberately strict:
@@ -76,7 +79,7 @@ The first multiplayer complexity boundary is deliberately strict:
 ```text
 index.html                  Landing page
 training/                   Solo Conviction: Existential training game
-the-burr/index.html         Multiplayer interface
+the-burr/index.html         Solo and multiplayer interface
 the-burr/engine.js          Deterministic game engine
 the-burr/app.js             Pass-and-play application controller
 the-burr/styles.css         Responsive situation-room design
@@ -111,11 +114,13 @@ See [`VALIDATION.md`](VALIDATION.md) for the current results and balance probe.
 
 ## Current milestone boundary
 
-This is a **web-assisted pass-and-play prototype**, not yet a networked hidden-information service. Privacy is enforced by the handoff screen and table conduct, not by separate authenticated clients. The current milestone asks one question before adding more states or networking:
+This is a **web-assisted solo/pass-and-play prototype**, not yet a networked hidden-information service. Privacy is enforced by the interface and table conduct, not by separate authenticated clients. The current milestone asks one question before adding more states or networking:
 
 > Can a proxy player entrap its patron through incentives and public commitments, while other players create a politically survivable exit?
 
 China, Iran, and North Korea are intentionally deferred until this five-role coupling is playtested.
+
+Solo and observer runs are synthetic diagnostics for learning the rules, checking pacing, exercising mechanics, and producing reproducible trajectories. They do not establish human negotiation quality, uncoached learnability, or balance and do not replace the planned five-human playtests.
 
 ## Publishing
 

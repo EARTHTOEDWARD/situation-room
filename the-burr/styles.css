@@ -121,10 +121,10 @@ button:disabled{opacity:.38;cursor:not-allowed;transform:none!important;box-shad
 .seat-toggle{display:flex;border:1px solid var(--line);border-radius:4px;overflow:hidden}
 .seat-toggle button{flex:1;padding:8px 5px;background:var(--bg);color:var(--dim);font:600 9px var(--mono);letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
 .seat-toggle button.active{background:var(--role-accent);color:#081017}
-.setup-footer{display:grid;grid-template-columns:230px 1fr auto;gap:18px;align-items:end;margin-top:20px;padding:18px;border:1px solid var(--line);border-radius:6px;background:var(--bg-2)}
-.seed-field{font-size:9px;letter-spacing:.12em;color:var(--dim)}
-.seed-field input{display:block;width:100%;margin-top:6px;border:1px solid var(--line);border-radius:4px;background:var(--bg);color:var(--cyan);padding:10px;font:11px var(--mono);outline:none}
-.seed-field input:focus{border-color:var(--cyan-dark)}
+.setup-footer{display:grid;grid-template-columns:230px 230px 1fr auto;gap:18px;align-items:end;margin-top:20px;padding:18px;border:1px solid var(--line);border-radius:6px;background:var(--bg-2)}
+.seed-field,.solo-role-field{font-size:9px;letter-spacing:.12em;color:var(--dim)}
+.seed-field input,.solo-role-field select{display:block;width:100%;margin-top:6px;border:1px solid var(--line);border-radius:4px;background:var(--bg);color:var(--cyan);padding:10px;font:11px var(--mono);outline:none}
+.seed-field input:focus,.solo-role-field select:focus{border-color:var(--cyan-dark)}
 .setup-note{color:var(--dim);font:10px/1.5 var(--mono)}
 .launch{min-width:180px}
 

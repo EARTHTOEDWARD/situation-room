@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Situation Room: The Burr — a five-role pass-and-play crisis bargaining prototype.">
+  <meta name="description" content="Situation Room: The Burr — a five-role solo or pass-and-play crisis bargaining prototype.">
   <title>Situation Room — The Burr</title>
   <style>
 :root{
@@ -129,10 +129,10 @@ button:disabled{opacity:.38;cursor:not-allowed;transform:none!important;box-shad
 .seat-toggle{display:flex;border:1px solid var(--line);border-radius:4px;overflow:hidden}
 .seat-toggle button{flex:1;padding:8px 5px;background:var(--bg);color:var(--dim);font:600 9px var(--mono);letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
 .seat-toggle button.active{background:var(--role-accent);color:#081017}
-.setup-footer{display:grid;grid-template-columns:230px 1fr auto;gap:18px;align-items:end;margin-top:20px;padding:18px;border:1px solid var(--line);border-radius:6px;background:var(--bg-2)}
-.seed-field{font-size:9px;letter-spacing:.12em;color:var(--dim)}
-.seed-field input{display:block;width:100%;margin-top:6px;border:1px solid var(--line);border-radius:4px;background:var(--bg);color:var(--cyan);padding:10px;font:11px var(--mono);outline:none}
-.seed-field input:focus{border-color:var(--cyan-dark)}
+.setup-footer{display:grid;grid-template-columns:230px 230px 1fr auto;gap:18px;align-items:end;margin-top:20px;padding:18px;border:1px solid var(--line);border-radius:6px;background:var(--bg-2)}
+.seed-field,.solo-role-field{font-size:9px;letter-spacing:.12em;color:var(--dim)}
+.seed-field input,.solo-role-field select{display:block;width:100%;margin-top:6px;border:1px solid var(--line);border-radius:4px;background:var(--bg);color:var(--cyan);padding:10px;font:11px var(--mono);outline:none}
+.seed-field input:focus,.solo-role-field select:focus{border-color:var(--cyan-dark)}
 .setup-note{color:var(--dim);font:10px/1.5 var(--mono)}
 .launch{min-width:180px}
 
@@ -241,7 +241,7 @@ button:disabled{opacity:.38;cursor:not-allowed;transform:none!important;box-shad
     </a>
     <div class="top-actions">
       <button class="micro" id="btnHow" type="button">How to Play</button>
-      <button class="micro accent" id="btnShowMe" type="button">Show Me a Round</button>
+      <button class="micro accent" id="btnShowMe" type="button">Observer Demo</button>
       <div class="status-box mono">
         SCENARIO <b>THE BURR</b><br>
         <span id="topStatus">SETUP · 5 ROLES · 6 ROUNDS</span>
@@ -258,9 +258,10 @@ button:disabled{opacity:.38;cursor:not-allowed;transform:none!important;box-shad
           <p>A lethal border incident lets a small proxy manufacture commitment from a larger patron. Every government must manage the world outside and the factions inside its own situation room.</p>
           <div class="formula mono">1 ladder · 2 actions · 3 factions · 4 assets · 6 rounds</div>
           <div class="hero-actions">
-            <button class="primary" id="presetFive" type="button">Five-player table</button>
+            <button class="primary" id="presetSolo" type="button">Solo command</button>
+            <button class="secondary" id="presetFive" type="button">Five-player table</button>
             <button class="secondary" id="presetTwo" type="button">Two-player quick start</button>
-            <button class="secondary" id="presetObserver" type="button">Observer / all AI</button>
+            <button class="secondary" id="presetObserver" type="button">Observer / all NPCs</button>
           </div>
         </div>
         <aside class="briefing-card">
@@ -273,14 +274,17 @@ button:disabled{opacity:.38;cursor:not-allowed;transform:none!important;box-shad
         </aside>
       </div>
 
-      <div class="section-label mono">Assign seats — human players use pass-and-play; AI fills the rest</div>
+      <div class="section-label mono">Assign seats — choose one human for solo; NPCs fill the rest</div>
       <div id="roleSetup" class="role-setup"></div>
 
       <div class="setup-footer">
         <label class="seed-field mono">REPLAY SEED
           <input id="seedInput" type="text" value="BURR-001" maxlength="32" autocomplete="off">
         </label>
-        <div class="setup-note">Current-round plans remain sealed until simultaneous resolution. The privacy screen is social, not cryptographic.</div>
+        <label class="solo-role-field mono" id="soloRoleField" hidden>YOUR SOLO ROLE
+          <select id="soloRoleSelect" aria-label="Choose your solo role"></select>
+        </label>
+        <div class="setup-note" id="setupNote">Current-round plans remain sealed until simultaneous resolution. The privacy screen is social, not cryptographic.</div>
         <button class="primary launch" id="btnStart" type="button">Open the table</button>
       </div>
     </section>
@@ -288,7 +292,7 @@ button:disabled{opacity:.38;cursor:not-allowed;transform:none!important;box-shad
     <section id="gameScreen" class="game-screen" hidden>
       <div class="crisis-brief">
         <span class="tag mono">PUBLIC BOARD</span>
-        <p><b>Table talk is open.</b> Public actions appear here after resolution. Private actions are visible only in the sending and receiving situation rooms unless they leak.</p>
+        <p id="crisisBriefText"><b>Table talk is open.</b> Public actions appear here after resolution. Private actions are visible only in the sending and receiving situation rooms unless they leak.</p>
       </div>
 
       <div class="dashboard">
@@ -332,7 +336,7 @@ button:disabled{opacity:.38;cursor:not-allowed;transform:none!important;box-shad
         <div class="round-copy">
           <span class="kicker mono">ROUND CONTROL</span>
           <h2 id="roundHeadline">Round 1 — negotiation window</h2>
-          <p id="roundInstruction">Discuss openly. When ready, begin sealed planning. Each human player will receive the device in turn; AI plans are generated but remain hidden.</p>
+          <p id="roundInstruction">Discuss openly. When ready, begin sealed planning. Each human player will receive the device in turn; NPC plans are generated but remain hidden.</p>
         </div>
         <div class="round-actions">
           <button class="secondary" id="btnTimer" type="button">Start 2:00 table timer</button>
@@ -448,7 +452,8 @@ button:disabled{opacity:.38;cursor:not-allowed;transform:none!important;box-shad
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
   'use strict';
 
-  const VERSION = '0.1.0';
+  const VERSION = '0.2.0';
+  const NPC_POLICY_VERSION = 'burr-rules-v1';
   const TEMP = Object.freeze({ NEGOTIABLE: 1, VITAL: 2, EXISTENTIAL: 3 });
   const TEMP_NAME = Object.freeze({ 1: 'NEGOTIABLE', 2: 'VITAL', 3: 'EXISTENTIAL' });
   const ISSUE = Object.freeze({
@@ -485,6 +490,7 @@ button:disabled{opacity:.38;cursor:not-allowed;transform:none!important;box-shad
   const ROLE_DEFS = Object.freeze({
     BELARUS: {
       id: 'BELARUS', name: 'Belarus', short: 'BY', regimeType: 'authoritarian', accent: '#d7b548',
+      publicBrief: 'A catalytic proxy with local access and limited aggregate power. Turn the border incident into leverage without losing room to manoeuvre.',
       brief: 'You are the catalytic proxy: weak in aggregate power, strong in the ability to manufacture patron commitment. Your real priority is regime survival, not the crossing itself.',
       factions: {
         hawk: { name: 'Security Hardliners', recommendation: 'Create facts before outsiders can coordinate.' },
@@ -503,6 +509,7 @@ button:disabled{opacity:.38;cursor:not-allowed;transform:none!important;box-shad
     },
     RUSSIA: {
       id: 'RUSSIA', name: 'Russia', short: 'RU', regimeType: 'authoritarian', accent: '#e06a58',
+      publicBrief: 'A patron balancing strategic depth and proxy control against the risk that ambiguous support becomes an unwanted public obligation.',
       brief: 'You are the patron. Belarus can entrap you by converting vague support into public obligation. You need strategic depth and credible guarantees without being dragged into an alliance war.',
       factions: {
         hawk: { name: 'Security Council Hawks', recommendation: 'Back the proxy visibly or every other guarantee weakens.' },
@@ -521,6 +528,7 @@ button:disabled{opacity:.38;cursor:not-allowed;transform:none!important;box-shad
     },
     US: {
       id: 'US', name: 'United States', short: 'US', regimeType: 'democracy', accent: '#64a6e8',
+      publicBrief: 'An alliance power balancing deterrence and credibility against the danger that reassurance becomes an automatic escalation commitment.',
       brief: 'You must preserve alliance credibility while avoiding a rhetorical trap that turns reassurance into an automatic war commitment.',
       factions: {
         hawk: { name: 'Joint Chiefs', recommendation: 'Make deterrence visible before the local balance closes.' },
@@ -539,6 +547,7 @@ button:disabled{opacity:.38;cursor:not-allowed;transform:none!important;box-shad
     },
     EU: {
       id: 'EU', name: 'European Union', short: 'EU', regimeType: 'coalition', accent: '#7bb9c8',
+      publicBrief: 'A coalition using sanctions, market access, and legitimacy while every crisis move also tests member-state unity.',
       brief: 'Your leverage comes from market access, sanctions, and legitimacy. Your constraint is that every escalation test is also a test of member-state unity.',
       factions: {
         hawk: { name: 'Eastern Security Bloc', recommendation: 'Impose a cost before border revision becomes normalised.' },
@@ -557,6 +566,7 @@ button:disabled{opacity:.38;cursor:not-allowed;transform:none!important;box-shad
     },
     UN: {
       id: 'UN', name: 'United Nations', short: 'UN', regimeType: 'institution', accent: '#50d6d1',
+      publicBrief: 'An institution trying to construct verified, sequenced exits without military forces of its own.',
       brief: 'You do not command forces. You manufacture viable exits: quiet rooms, verification, escrow, sequencing, and public language that lets everyone claim partial success.',
       factions: {
         hawk: { name: 'Charter Legalists', recommendation: 'Name the breach clearly or institutional credibility dissolves.' },
@@ -638,6 +648,7 @@ button:disabled{opacity:.38;cursor:not-allowed;transform:none!important;box-shad
       { id: 'N_QUIET_ROOM', label: 'Open a quiet room', alignment: 'statesman', type: 'quietRoom', targets: ['BELARUS', 'RUSSIA', 'US', 'EU'], assetCost: { id: 'QUIET_ROOM', amount: 1 }, desc: 'Probe one actor’s real wound through private conditional questions.', privateText: 'The UN opens a protected quiet channel to test the target’s real priority.' },
       { id: 'N_INSPECTION_MISSION', label: 'Draft an inspection mission', alignment: 'statesman', type: 'inspection', targets: ['BELARUS'], assetCost: { id: 'INSPECTION', amount: 1 }, desc: 'Create verified compliance that can substitute for trust.', privateText: 'The UN drafts a monitored inspection and withdrawal mission.' },
       { id: 'N_SECRET_ANNEX', label: 'Draft a secret annex', alignment: 'survival', type: 'secretAnnex', assetCost: { id: 'COMMUNIQUE', amount: 1 }, desc: 'Hide one unpalatable concession and reduce its immediate audience cost.', privateText: 'The UN prepares a classified annex to protect an unpalatable concession.' },
+      { id: 'N_MAINTAIN_CHANNELS', label: 'Maintain liaison channels', alignment: 'survival', type: 'maintainChannels', desc: 'Keep routine contacts alive without spending another scarce mediation asset.', privateText: 'The UN maintains routine liaison channels but commits no scarce mediation asset.' },
     ],
   });
 
@@ -717,7 +728,9 @@ button:disabled{opacity:.38;cursor:not-allowed;transform:none!important;box-shad
     });
     return {
       version: VERSION,
+      npcPolicyVersion: NPC_POLICY_VERSION,
       scenario: 'THE BURR',
+      mode: humanRoles.size === 0 ? 'observer' : humanRoles.size === 1 ? 'solo' : 'table',
       seed: String(seed),
       rngState: hashSeed(seed),
       round: 1,
@@ -1511,22 +1524,48 @@ button:disabled{opacity:.38;cursor:not-allowed;transform:none!important;box-shad
     return choose('statesman', PUBLIC_ACTIONS[roleId][0].id, PRIVATE_ACTIONS[roleId][0].id, null);
   }
 
-  function submitAIPlans(game) {
+  function findLegalFallbackPlan(game, roleId) {
+    const factions = ['survival', 'statesman', 'hawk'];
+    const publicActions = getPublicActions(game, roleId);
+    const privateActions = getPrivateActions(game, roleId);
+    for (const faction of factions) {
+      for (const pub of publicActions) {
+        for (const priv of privateActions) {
+          const targets = priv.targets && priv.targets.length ? priv.targets : [null];
+          for (const target of targets) {
+            const plan = { faction, publicAction: pub.id, privateAction: priv.id, target };
+            if (validatePlan(game, roleId, plan).ok) return plan;
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  function submitNPCPlans(game) {
+    const submitted = [];
     ROLE_ORDER.forEach((roleId) => {
       const role = game.roles[roleId];
       if (!role.human && !role.eliminated && !game.plans[roleId]) {
         const plan = autoPlan(game, roleId);
         const checked = validatePlan(game, roleId, plan);
-        if (checked.ok) game.plans[roleId] = plan;
-        else {
-          const pub = getPublicActions(game, roleId).find((action) => action.available);
-          const priv = getPrivateActions(game, roleId).find((action) => action.available);
-          const target = priv && priv.targets && priv.targets.length ? priv.targets[0] : null;
-          game.plans[roleId] = { faction: 'survival', publicAction: pub.id, privateAction: priv.id, target };
-        }
+        const legalPlan = checked.ok ? plan : findLegalFallbackPlan(game, roleId);
+        if (!legalPlan) return;
+        game.plans[roleId] = legalPlan;
+        submitted.push(roleId);
       }
     });
+    const blockedRole = ROLE_ORDER.find((roleId) => {
+      const role = game.roles[roleId];
+      return !role.human && !role.eliminated && !game.plans[roleId];
+    });
+    return blockedRole
+      ? { ok: false, reason: `${game.roles[blockedRole].name} has no complete legal NPC plan.` }
+      : { ok: true, submitted };
   }
+
+  // Backward-compatible alias for public-alpha replays and external probes.
+  const submitAIPlans = submitNPCPlans;
 
   function submitGuidedPlans(game) {
     ROLE_ORDER.forEach((roleId) => {
@@ -1566,23 +1605,54 @@ button:disabled{opacity:.38;cursor:not-allowed;transform:none!important;box-shad
     ];
   }
 
-  function exportReplay(game) {
+  function exportReplay(game, options) {
+    const revealHidden = Boolean(options && options.revealHidden);
+    const roundHistory = revealHidden
+      ? deepClone(game.roundHistory)
+      : game.roundHistory.map((round) => {
+        const publicPlans = {};
+        Object.entries(round.plans || {}).forEach(([roleId, plan]) => {
+          publicPlans[roleId] = { publicAction: plan.publicAction };
+        });
+        // Build the public replay from an allow-list so new private resolution
+        // fields cannot silently leak into an active-game export.
+        return {
+          round: round.round,
+          start: {
+            rung: round.start.rung,
+            media: round.start.media,
+            entanglement: round.start.entanglement,
+          },
+          plans: publicPlans,
+          end: {
+            rung: round.end.rung,
+            media: round.end.media,
+            entanglement: round.end.entanglement,
+          },
+        };
+      });
+    const final = {
+      rung: game.ladder.rung,
+      media: game.media,
+      entanglement: game.entanglement,
+    };
+    if (revealHidden) final.score = scoreGame(game);
     return JSON.stringify({
       version: game.version,
+      npcPolicyVersion: game.npcPolicyVersion || NPC_POLICY_VERSION,
       scenario: game.scenario,
       seed: game.seed,
-      roundHistory: game.roundHistory,
-      final: {
-        rung: game.ladder.rung,
-        media: game.media,
-        entanglement: game.entanglement,
-        score: scoreGame(game),
-      },
+      mode: game.mode,
+      humanRoles: ROLE_ORDER.filter((roleId) => game.roles[roleId].human),
+      visibility: revealHidden ? 'debrief' : 'public',
+      roundHistory,
+      final,
     }, null, 2);
   }
 
   return Object.freeze({
     VERSION,
+    NPC_POLICY_VERSION,
     TEMP,
     TEMP_NAME,
     ISSUE,
@@ -1602,6 +1672,7 @@ button:disabled{opacity:.38;cursor:not-allowed;transform:none!important;box-shad
     submitPlan,
     allPlansSubmitted,
     autoPlan,
+    submitNPCPlans,
     submitAIPlans,
     submitGuidedPlans,
     resolveRound,
@@ -1685,6 +1756,11 @@ button:disabled{opacity:.38;cursor:not-allowed;transform:none!important;box-shad
     return `--role-accent:${E.ROLE_DEFS[roleId].accent}`;
   }
 
+  function humanRoleIds(sourceGame) {
+    const roles = sourceGame ? sourceGame.roles : null;
+    return E.ROLE_ORDER.filter((roleId) => roles ? roles[roleId].human : setupHumans.has(roleId));
+  }
+
   function renderSetup() {
     const root = $('#roleSetup');
     root.innerHTML = '';
@@ -1700,10 +1776,10 @@ button:disabled{opacity:.38;cursor:not-allowed;transform:none!important;box-shad
           <div class="role-badge">${escapeHtml(def.short)}</div>
           <h3>${escapeHtml(def.name)}</h3>
         </div>
-        <p>${escapeHtml(def.brief)}</p>
+        <p>${escapeHtml(def.publicBrief)}</p>
         <div class="seat-toggle" role="group" aria-label="${escapeHtml(def.name)} seat type">
           <button type="button" data-seat="human" class="${isHuman ? 'active' : ''}">Human</button>
-          <button type="button" data-seat="ai" class="${!isHuman ? 'active' : ''}">AI</button>
+          <button type="button" data-seat="npc" class="${!isHuman ? 'active' : ''}">NPC</button>
         </div>`;
       card.querySelectorAll('[data-seat]').forEach((button) => {
         button.addEventListener('click', () => {
@@ -1714,14 +1790,28 @@ button:disabled{opacity:.38;cursor:not-allowed;transform:none!important;box-shad
       });
       root.appendChild(card);
     });
+    const soloField = $('#soloRoleField');
+    const soloSelect = $('#soloRoleSelect');
+    const selectedRoles = humanRoleIds();
+    soloField.hidden = selectedRoles.length !== 1;
+    soloSelect.innerHTML = E.ROLE_ORDER.map((roleId) => `<option value="${roleId}">${escapeHtml(E.ROLE_DEFS[roleId].name)}</option>`).join('');
+    if (selectedRoles.length === 1) soloSelect.value = selectedRoles[0];
+    if (selectedRoles.length === 1) {
+      $('#setupNote').textContent = `Solo command: you control ${E.ROLE_DEFS[selectedRoles[0]].name}; four rules-based NPCs carry the evolving crisis state forward. Choose another role here at any time.`;
+    } else if (selectedRoles.length === 0) {
+      $('#setupNote').textContent = 'Observer mode: all five rules-based NPCs act. Use this for a deterministic demonstration, not as evidence of human balance.';
+    } else {
+      $('#setupNote').textContent = 'Current-round plans remain sealed until simultaneous resolution. The privacy screen is social, not cryptographic.';
+    }
     $('#btnStart').textContent = setupHumans.size
       ? `Open the table · ${setupHumans.size} human${setupHumans.size === 1 ? '' : 's'}`
-      : 'Open observer table · all AI';
+      : 'Open observer table · all NPCs';
   }
 
   function applyPreset(name) {
     if (name === 'five') setupHumans = new Set(E.ROLE_ORDER);
     else if (name === 'two') setupHumans = new Set(['BELARUS', 'RUSSIA']);
+    else if (name === 'solo') setupHumans = new Set(['UN']);
     else setupHumans = new Set();
     renderSetup();
   }
@@ -1733,10 +1823,17 @@ button:disabled{opacity:.38;cursor:not-allowed;transform:none!important;box-shad
     setScreen('game');
     renderShared();
     saveGame();
+    const humans = humanRoleIds(game);
+    const solo = humans.length === 1;
+    const opening = solo
+      ? `<p><b>Solo command: you control ${escapeHtml(E.ROLE_DEFS[humans[0]].name)}.</b> Four rules-based NPCs read the public crisis and their own carried role state, then seal legal plans before you choose. The replay seed is <span class="mono">${escapeHtml(game.seed)}</span>.</p>
+         <div class="worked"><b>Round loop:</b> inspect the public board → enter your situation room → seal one public and one private action → resolve all five plans simultaneously.</div>
+         <p>No external AI service is used. NPC policy is deterministic and scenario-specific; private NPC rooms remain hidden until the debrief.</p>`
+      : `<p><b>${setupHumans.size || 'No'} human seat${setupHumans.size === 1 ? '' : 's'}.</b> The remaining roles are controlled by deterministic scenario NPCs using replay seed <span class="mono">${escapeHtml(game.seed)}</span>.</p>
+         <div class="worked"><b>Round loop:</b> negotiate openly → pass the device through private rooms → seal one public and one private action per role → resolve simultaneously.</div>
+         <p>Do not show another player your private stakes, faction pressure, inbox, or selected actions. Off-device promises are political speech; only actions encoded in the app are mechanically binding.</p>`;
     openModal('Table opened', `
-      <p><b>${setupHumans.size || 'No'} human seat${setupHumans.size === 1 ? '' : 's'}.</b> The remaining roles are controlled by deterministic scenario AI using replay seed <span class="mono">${escapeHtml(game.seed)}</span>.</p>
-      <div class="worked"><b>Round loop:</b> negotiate openly → pass the device through private rooms → seal one public and one private action per role → resolve simultaneously.</div>
-      <p>Do not show another player your private stakes, faction pressure, inbox, or selected actions. Off-device promises are political speech; only actions encoded in the app are mechanically binding.</p>
+      ${opening}
       <div class="modal-actions"><button class="primary" id="modalBegin" type="button">Begin at the public board</button></div>`);
     $('#modalBegin').addEventListener('click', closeModal);
   }
@@ -1790,7 +1887,7 @@ button:disabled{opacity:.38;cursor:not-allowed;transform:none!important;box-shad
         <div class="public-role-top">
           <div class="role-badge">${escapeHtml(def.short)}</div>
           <h3>${escapeHtml(def.name)}</h3>
-          <span class="seat">${role.human ? 'human' : 'AI'}</span>
+          <span class="seat">${role.human ? 'human' : 'NPC'}</span>
         </div>
         <div class="stability ${status}"><i></i>${escapeHtml(status)}</div>
         <div class="posture">
@@ -1851,13 +1948,28 @@ button:disabled{opacity:.38;cursor:not-allowed;transform:none!important;box-shad
       $('#btnPlan').disabled = false;
     } else {
       $('#roundHeadline').textContent = `Round ${game.round} — negotiation window`;
-      const humanCount = E.ROLE_ORDER.filter((id) => game.roles[id].human && !game.roles[id].eliminated).length;
-      $('#roundInstruction').textContent = humanCount
-        ? `Discuss openly. Then pass the device through ${humanCount} private situation room${humanCount === 1 ? '' : 's'}; AI plans are generated before any human plan is entered.`
-        : 'All five roles are AI-controlled. Resolve the next round, then inspect the public consequences and final reveal.';
-      $('#btnPlan').textContent = humanCount ? 'Begin sealed planning' : 'Resolve AI round';
+      const activeHumans = humanRoleIds(game).filter((roleId) => !game.roles[roleId].eliminated);
+      if (game.mode === 'solo' && activeHumans.length === 1) {
+        const roleName = E.ROLE_DEFS[activeHumans[0]].name;
+        $('#roundInstruction').textContent = `Read the public board and your ${roleName} inbox. Four NPC plans will be sealed before you enter your room; commitments, faction pressure, and expiring assets carry into the next round.`;
+        $('#btnPlan').textContent = `Plan ${roleName}'s move`;
+      } else if (activeHumans.length) {
+        $('#roundInstruction').textContent = `Discuss openly. Then pass the device through ${activeHumans.length} private situation room${activeHumans.length === 1 ? '' : 's'}; NPC plans are generated before any human plan is entered.`;
+        $('#btnPlan').textContent = 'Begin sealed planning';
+      } else {
+        $('#roundInstruction').textContent = 'All active roles are NPC-controlled. Resolve the next round, then inspect the public consequences and final reveal.';
+        $('#btnPlan').textContent = 'Resolve NPC round';
+      }
       $('#btnPlan').disabled = false;
     }
+    if (game.mode === 'solo') {
+      $('#crisisBriefText').innerHTML = '<b>You command one private room.</b> NPC public actions appear here after resolution. Private offers addressed to your role arrive in its inbox; other rooms remain hidden until the debrief.';
+    } else if (game.mode === 'observer') {
+      $('#crisisBriefText').innerHTML = '<b>Observer run.</b> All roles are controlled by rules-based NPCs. Follow public consequences here; hidden rooms are revealed only in the debrief.';
+    } else {
+      $('#crisisBriefText').innerHTML = '<b>Table talk is open.</b> Public actions appear here after resolution. Private actions are visible only in the sending and receiving situation rooms unless they leak.';
+    }
+    if (!timerHandle) $('#btnTimer').textContent = timerStartLabel();
     $('#topStatus').innerHTML = `ROUND <b>${game.round}</b> / ${game.maxRounds} · ${game.over ? 'CONCLUDED' : 'ACTIVE'} · RUNG <b>${game.ladder.rung}</b>`;
   }
 
@@ -1877,7 +1989,11 @@ button:disabled{opacity:.38;cursor:not-allowed;transform:none!important;box-shad
       return;
     }
     clearTimer();
-    E.submitAIPlans(game);
+    const npcResult = E.submitNPCPlans(game);
+    if (!npcResult.ok) {
+      openModal('Planning blocked', `<p>${escapeHtml(npcResult.reason)}</p>`);
+      return;
+    }
     planningQueue = E.ROLE_ORDER.filter((roleId) => game.roles[roleId].human && !game.roles[roleId].eliminated && !game.plans[roleId]);
     queueIndex = 0;
     if (!planningQueue.length) {
@@ -1897,8 +2013,11 @@ button:disabled{opacity:.38;cursor:not-allowed;transform:none!important;box-shad
     $('#handoffCard').style.setProperty('--role-accent', def.accent);
     $('#handoffSeal').style.setProperty('--role-accent', def.accent);
     $('#handoffSeal').textContent = def.short;
-    $('#handoffTitle').textContent = `Pass the device to ${def.name}`;
-    $('#handoffText').textContent = `${queueIndex + 1} of ${planningQueue.length} human rooms this round. Other players should look away; no current-round action has been revealed.`;
+    const soloRoom = game.mode === 'solo' && planningQueue.length === 1;
+    $('#handoffTitle').textContent = soloRoom ? `Enter your ${def.name} situation room` : `Pass the device to ${def.name}`;
+    $('#handoffText').textContent = soloRoom
+      ? 'Four NPC plans are already sealed. Review only what your role knows, then choose one public and one private action.'
+      : `${queueIndex + 1} of ${planningQueue.length} human rooms this round. Other players should look away; no current-round action has been revealed.`;
     $('#btnEnterRoom').focus();
   }
 
@@ -2070,7 +2189,11 @@ button:disabled{opacity:.38;cursor:not-allowed;transform:none!important;box-shad
   }
 
   function resolveCurrentRound() {
-    E.submitAIPlans(game);
+    const npcResult = E.submitNPCPlans(game);
+    if (!npcResult.ok) {
+      openModal('Resolution blocked', `<p>${escapeHtml(npcResult.reason)}</p>`);
+      return;
+    }
     const result = E.resolveRound(game);
     if (!result.ok) {
       openModal('Resolution blocked', `<p>${escapeHtml(result.reason)}</p>`);
@@ -2102,6 +2225,7 @@ button:disabled{opacity:.38;cursor:not-allowed;transform:none!important;box-shad
     openModal('How to play The Burr', `
       <p><b>Goal:</b> secure your real interests and keep your leadership, society, and future leverage intact. The table also receives a shared world-viability score; a narrow national win can coexist with collective catastrophe.</p>
       <div class="how-grid">
+        <div class="how-card"><b>Solo command</b><span>Choose one human role; four deterministic, rules-based NPCs fill the other rooms. Structured actions—not free text—carry bargaining signals through the engine.</span></div>
         <div class="how-card"><b>1 · Negotiate</b><span>Talk openly between rounds. Private side conversations are allowed, but only encoded actions become mechanically binding.</span></div>
         <div class="how-card"><b>2 · Enter privately</b><span>Pass the device. Each human sees their true stakes, sacrifice ceiling, faction pressure, assets, and backchannel inbox.</span></div>
         <div class="how-card"><b>3 · Choose two actions</b><span>Select one public action and one private action. All current-round plans remain sealed until everyone has submitted.</span></div>
@@ -2111,8 +2235,9 @@ button:disabled{opacity:.38;cursor:not-allowed;transform:none!important;box-shad
         <div class="how-card"><b>Authoritarian trade-off</b><span>Russia and Belarus pay lower immediate public audience costs, but elite challenges are hidden and can become abrupt regime threats.</span></div>
         <div class="how-card"><b>Face and secrecy</b><span>UN escrow, inspection, joint language, and secret annexes can make retreat survivable. Secret concessions may later leak.</span></div>
       </div>
-      <div class="worked"><b>Worked example:</b> Belarus publicly calls the crossing existential, although its real existential stake is regime survival. It privately offers withdrawal for a Russian guarantee. If Russia independently selects the matching conditional guarantee, the package forms. The crossing de-escalates, but Russian entanglement rises and the hidden concession acquires leak risk.</div>
-      <div class="modal-actions"><button class="secondary" id="howClose" type="button">Return</button><button class="primary" id="howTour" type="button">Show me the first round</button></div>`);
+      <div class="worked"><b>Mechanism example:</b> one actor may overclaim a negotiable issue in public while privately offering restraint for protection. A bargain forms only if the intended counterpart independently chooses the matching conditional offer. The ladder may fall while entanglement and future leak risk rise.</div>
+      <p><b>Spoiler notice:</b> the observer demo reveals one scripted path through all five private rooms. Skip it before table play if you want every hidden priority to remain unknown.</p>
+      <div class="modal-actions"><button class="secondary" id="howClose" type="button">Return</button><button class="primary" id="howTour" type="button">Open observer demo</button></div>`);
     $('#howClose').addEventListener('click', closeModal);
     $('#howTour').addEventListener('click', () => { closeModal(); startGuidedRound(); });
   }
@@ -2120,18 +2245,24 @@ button:disabled{opacity:.38;cursor:not-allowed;transform:none!important;box-shad
   function showWelcome() {
     const saved = loadSavedGame();
     openModal('Welcome to Situation Room', `
-      <p><b>The Burr</b> is the first multiplayer vertical slice: Belarus, Russia, the United States, the European Union, and the United Nations share one crisis while managing five different internal rooms.</p>
+      <p><b>The Burr</b> is a solo or multiplayer vertical slice: Belarus, Russia, the United States, the European Union, and the United Nations share one crisis while managing five different internal rooms.</p>
       <div class="worked"><b>The central experience:</b> “I knew which compromise could work, but I could not say it publicly.”</div>
-      <p>Use five humans for the full table, two humans for the proxy–patron core, or let the AI demonstrate the system.</p>
+      <p>Play alone as any one role against four rules-based NPCs, use two humans for the proxy–patron core, bring five humans for the full table, or observe an all-NPC demonstration.</p>
       <div class="modal-actions">
         ${saved ? '<button class="secondary" id="welcomeResume" type="button">Resume saved table</button>' : ''}
         <button class="secondary" id="welcomeHow" type="button">How to play</button>
-        <button class="primary" id="welcomeTour" type="button">Show me a round</button>
+        <button class="secondary" id="welcomeTour" type="button">Observer demo (spoilers)</button>
+        <button class="primary" id="welcomeSolo" type="button">Play solo</button>
         <button class="secondary" id="welcomeSetup" type="button">Set up table</button>
       </div>`);
     if (saved) $('#welcomeResume').addEventListener('click', () => resumeGame(saved));
     $('#welcomeHow').addEventListener('click', showHowToPlay);
     $('#welcomeTour').addEventListener('click', () => { closeModal(); startGuidedRound(); });
+    $('#welcomeSolo').addEventListener('click', () => {
+      applyPreset('solo');
+      closeModal();
+      $('#soloRoleSelect').focus();
+    });
     $('#welcomeSetup').addEventListener('click', closeModal);
   }
 
@@ -2257,7 +2388,7 @@ button:disabled{opacity:.38;cursor:not-allowed;transform:none!important;box-shad
       <ul>${dealList}</ul>
       <div class="worked"><b>Interpretation:</b> compare the strategic score with leadership survival, national welfare, and world viability. A government can “win” its narrow objective while damaging the constituency it claims to protect.</div>
       <div class="modal-actions"><button class="secondary" id="debriefExport" type="button">Export replay JSON</button><button class="secondary" id="debriefFeedback" type="button">Give playtest feedback</button><button class="primary" id="debriefNew" type="button">New table</button></div>`);
-    $('#debriefExport').addEventListener('click', exportReplay);
+    $('#debriefExport').addEventListener('click', () => exportReplay(true));
     $('#debriefFeedback').addEventListener('click', () => window.open(FEEDBACK_URL, '_blank', 'noopener,noreferrer'));
     $('#debriefNew').addEventListener('click', () => { closeModal(); newTable(); });
   }
@@ -2272,9 +2403,9 @@ button:disabled{opacity:.38;cursor:not-allowed;transform:none!important;box-shad
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  function exportReplay() {
+  function exportReplay(revealHidden) {
     if (!game) return;
-    const data = E.exportReplay(game);
+    const data = E.exportReplay(game, { revealHidden: Boolean(revealHidden) });
     const blob = new Blob([data], { type: 'application/json' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
@@ -2291,6 +2422,10 @@ button:disabled{opacity:.38;cursor:not-allowed;transform:none!important;box-shad
     $('#timerDisplay').textContent = `${minutes}:${seconds}`;
   }
 
+  function timerStartLabel() {
+    return game && game.mode === 'solo' ? 'Start 2:00 decision timer' : 'Start 2:00 table timer';
+  }
+
   function startTimer() {
     if (timerHandle) {
       clearTimer();
@@ -2298,7 +2433,7 @@ button:disabled{opacity:.38;cursor:not-allowed;transform:none!important;box-shad
     }
     timerSeconds = 120;
     $('#timerDisplay').hidden = false;
-    $('#btnTimer').textContent = 'Stop table timer';
+    $('#btnTimer').textContent = game && game.mode === 'solo' ? 'Stop decision timer' : 'Stop table timer';
     updateTimerDisplay();
     timerHandle = window.setInterval(() => {
       timerSeconds -= 1;
@@ -2314,11 +2449,12 @@ button:disabled{opacity:.38;cursor:not-allowed;transform:none!important;box-shad
   function clearTimer(hide) {
     if (timerHandle) window.clearInterval(timerHandle);
     timerHandle = null;
-    $('#btnTimer').textContent = 'Start 2:00 table timer';
+    $('#btnTimer').textContent = timerStartLabel();
     if (hide !== false) $('#timerDisplay').hidden = true;
   }
 
   function wireEvents() {
+    $('#presetSolo').addEventListener('click', () => applyPreset('solo'));
     $('#presetFive').addEventListener('click', () => applyPreset('five'));
     $('#presetTwo').addEventListener('click', () => applyPreset('two'));
     $('#presetObserver').addEventListener('click', () => applyPreset('observer'));
@@ -2327,7 +2463,11 @@ button:disabled{opacity:.38;cursor:not-allowed;transform:none!important;box-shad
     $('#btnShowMe').addEventListener('click', startGuidedRound);
     $('#btnPlan').addEventListener('click', beginPlanning);
     $('#btnTimer').addEventListener('click', startTimer);
-    $('#btnExport').addEventListener('click', exportReplay);
+    $('#btnExport').addEventListener('click', () => exportReplay(false));
+    $('#soloRoleSelect').addEventListener('change', (event) => {
+      setupHumans = new Set([event.target.value]);
+      renderSetup();
+    });
     $('#btnEnterRoom').addEventListener('click', enterRoom);
     $('#btnLeaveRoom').addEventListener('click', leaveRoom);
     $('#btnSealPlan').addEventListener('click', sealPlan);
