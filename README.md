@@ -121,4 +121,12 @@ China, Iran, and North Korea are intentionally deferred until this five-role cou
 
 The repository is a static GitHub Pages site. The included workflow deploys the repository root. After pushing to a public repository, enable **Settings → Pages → GitHub Actions**.
 
-No software license has been selected in this prototype package.
+## Licensing
+
+Situation Room uses a split licence:
+
+- software and executable code: [Mozilla Public License 2.0](LICENSE) (`MPL-2.0`);
+- scenario writing, rules, documentation prose, screenshots, artwork, and other creative material: [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International](LICENSES/CC-BY-NC-SA-4.0.txt) (`CC-BY-NC-SA-4.0`);
+- project names, logos, and other source-identifying marks: no trademark rights granted.
+
+Mixed HTML and generated standalone artifacts retain that code/content split. See [LICENSING.md](LICENSING.md) for the precise scope and [TRADEMARKS.md](TRADEMARKS.md) for the project-name notice.
