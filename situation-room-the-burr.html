@@ -1,0 +1,2372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Situation Room: The Burr — a five-role pass-and-play crisis bargaining prototype.">
+  <title>Situation Room — The Burr</title>
+  <style>
+:root{
+  --bg:#080d13;
+  --bg-2:#0d141d;
+  --panel:#111a25;
+  --panel-2:#162130;
+  --panel-3:#1d2a3a;
+  --line:#2a3a4d;
+  --line-strong:#40566f;
+  --ink:#e8eef5;
+  --muted:#a5b4c5;
+  --dim:#6e8197;
+  --faint:#46586d;
+  --amber:#f0aa35;
+  --amber-dark:#8c6424;
+  --cyan:#54d3d3;
+  --cyan-dark:#2a7478;
+  --red:#eb6049;
+  --red-dark:#81382e;
+  --green:#63bf82;
+  --blue:#68a9e8;
+  --shadow:0 24px 80px rgba(0,0,0,.62);
+  --display:"Arial Narrow","Roboto Condensed","DIN Condensed",Arial,sans-serif;
+  --body:Georgia,"Times New Roman",serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{background:var(--bg);color-scheme:dark;-webkit-text-size-adjust:100%}
+body{
+  min-height:100vh;
+  overflow-x:hidden;
+  color:var(--ink);
+  font-family:var(--body);
+  line-height:1.48;
+  background:
+    radial-gradient(1000px 520px at 50% -120px,rgba(35,75,106,.42),transparent 67%),
+    radial-gradient(850px 500px at 100% 115%,rgba(60,34,55,.35),transparent 58%),
+    var(--bg);
+}
+button,input,select{font:inherit}
+button{color:inherit}
+a{color:inherit}
+[hidden]{display:none!important}
+.mono{font-family:var(--mono)}
+.scanlines{position:fixed;inset:0;z-index:1000;pointer-events:none;opacity:.35;background:repeating-linear-gradient(0deg,rgba(255,255,255,.012) 0 1px,transparent 1px 4px)}
+
+.topbar{
+  min-height:72px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:20px;
+  padding:15px clamp(16px,3vw,42px);
+  border-bottom:1px solid var(--line);
+  background:rgba(8,13,19,.9);
+  backdrop-filter:blur(12px);
+  position:sticky;
+  top:0;
+  z-index:80;
+}
+.brand{display:flex;align-items:center;gap:13px;text-decoration:none;min-width:max-content}
+.classification{
+  display:inline-flex;align-items:center;justify-content:center;
+  background:var(--amber);color:#111820;border-radius:2px;
+  padding:3px 8px;font:700 9px/1.3 var(--mono);letter-spacing:.13em;text-transform:uppercase;
+}
+.brand-title{font:600 23px/1 var(--display);letter-spacing:.08em;text-transform:uppercase}
+.brand-title b{color:var(--amber)}
+.top-actions{display:flex;align-items:center;justify-content:flex-end;gap:9px;flex-wrap:wrap}
+.status-box{font-size:9.5px;line-height:1.65;color:var(--dim);text-align:right;margin-left:8px}
+.status-box b{color:var(--cyan);font-weight:600}
+
+button{border:0}
+.primary,.secondary,.micro,.close{
+  cursor:pointer;transition:transform .16s ease,border-color .16s ease,background .16s ease,opacity .16s ease;
+}
+.primary,.secondary{
+  min-height:41px;border-radius:4px;padding:10px 15px;
+  font:600 12px/1 var(--display);letter-spacing:.07em;text-transform:uppercase;
+}
+.primary{background:var(--cyan);color:#091319;border:1px solid var(--cyan)}
+.primary:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 8px 25px rgba(84,211,211,.17)}
+.secondary{background:var(--panel-2);border:1px solid var(--line-strong);color:var(--ink)}
+.secondary:hover:not(:disabled){background:var(--panel-3);border-color:var(--muted);transform:translateY(-1px)}
+button:disabled{opacity:.38;cursor:not-allowed;transform:none!important;box-shadow:none!important}
+.micro{background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:7px 9px;color:var(--muted);font:600 10px/1 var(--display);letter-spacing:.08em;text-transform:uppercase}
+.micro:hover{border-color:var(--line-strong);color:var(--ink)}
+.micro.accent{color:var(--cyan);border-color:var(--cyan-dark)}
+.close{width:34px;height:34px;border:1px solid var(--line);border-radius:4px;background:var(--panel);color:var(--muted);font:24px/1 Arial}
+.close:hover{border-color:var(--cyan-dark);color:var(--cyan)}
+
+.shell{max-width:1500px;margin:0 auto;padding:clamp(20px,3vw,42px) clamp(14px,2.5vw,34px) 80px}
+.setup-screen{animation:rise .45s ease-out}
+@keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.hero-grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(320px,.75fr);gap:22px;margin-bottom:30px}
+.hero-copy,.briefing-card,.panel,.crisis-brief{
+  background:linear-gradient(180deg,rgba(19,29,41,.97),rgba(11,17,25,.98));
+  border:1px solid var(--line);border-radius:8px;
+}
+.hero-copy{padding:clamp(26px,4.8vw,64px);position:relative;overflow:hidden}
+.hero-copy::after{content:"";position:absolute;width:360px;height:360px;right:-155px;bottom:-180px;border:1px solid rgba(84,211,211,.18);border-radius:50%;box-shadow:0 0 0 38px rgba(84,211,211,.025),0 0 0 78px rgba(84,211,211,.018)}
+.eyebrow,.kicker{font-size:9px;letter-spacing:.16em;color:var(--cyan);text-transform:uppercase}
+.hero-copy h1{font:700 clamp(52px,8vw,104px)/.92 var(--display);letter-spacing:.025em;text-transform:uppercase;margin:16px 0 18px;position:relative;z-index:1}
+.hero-copy>p{max-width:760px;color:var(--muted);font-size:clamp(16px,1.8vw,21px);line-height:1.48;position:relative;z-index:1}
+.formula{display:inline-flex;margin-top:24px;padding:9px 12px;border-left:3px solid var(--amber);background:rgba(240,170,53,.06);color:var(--amber);font-size:11px;letter-spacing:.07em;position:relative;z-index:1}
+.hero-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:28px;position:relative;z-index:1}
+.briefing-card{padding:28px;position:relative;border-left:3px solid var(--amber)}
+.card-tag{display:inline-block;color:var(--amber);font-size:9px;letter-spacing:.17em;margin-bottom:18px}
+.briefing-card>p{color:var(--muted);font-size:16px;line-height:1.58}
+.briefing-callout{margin-top:24px;padding:14px 15px;background:var(--bg);border:1px solid var(--line);border-radius:5px}
+.briefing-callout b{display:block;font:600 13px var(--display);text-transform:uppercase;letter-spacing:.06em;color:var(--ink);margin-bottom:5px}
+.briefing-callout span{display:block;color:var(--dim);font:10.5px/1.55 var(--mono)}
+.section-label,.subhead{font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--dim)}
+.section-label{margin:0 0 10px 4px}
+.role-setup{display:grid;grid-template-columns:repeat(5,minmax(190px,1fr));gap:10px}
+.setup-role{background:linear-gradient(180deg,var(--panel),var(--bg-2));border:1px solid var(--line);border-top:3px solid var(--role-accent);border-radius:6px;padding:15px;min-width:0}
+.setup-role-top{display:flex;align-items:center;gap:10px}
+.role-badge,.role-seal{width:38px;height:38px;display:flex;align-items:center;justify-content:center;border:1px solid var(--role-accent);border-radius:50%;color:var(--role-accent);background:rgba(255,255,255,.025);font:700 12px var(--mono)}
+.setup-role h3{font:600 16px var(--display);letter-spacing:.05em;text-transform:uppercase}
+.setup-role p{color:var(--dim);font:10px/1.45 var(--mono);margin:12px 0;min-height:58px}
+.seat-toggle{display:flex;border:1px solid var(--line);border-radius:4px;overflow:hidden}
+.seat-toggle button{flex:1;padding:8px 5px;background:var(--bg);color:var(--dim);font:600 9px var(--mono);letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
+.seat-toggle button.active{background:var(--role-accent);color:#081017}
+.setup-footer{display:grid;grid-template-columns:230px 1fr auto;gap:18px;align-items:end;margin-top:20px;padding:18px;border:1px solid var(--line);border-radius:6px;background:var(--bg-2)}
+.seed-field{font-size:9px;letter-spacing:.12em;color:var(--dim)}
+.seed-field input{display:block;width:100%;margin-top:6px;border:1px solid var(--line);border-radius:4px;background:var(--bg);color:var(--cyan);padding:10px;font:11px var(--mono);outline:none}
+.seed-field input:focus{border-color:var(--cyan-dark)}
+.setup-note{color:var(--dim);font:10px/1.5 var(--mono)}
+.launch{min-width:180px}
+
+.game-screen{animation:rise .35s ease-out}
+.crisis-brief{position:relative;padding:15px 18px 14px;border-left:3px solid var(--cyan);margin-bottom:14px}
+.crisis-brief .tag{position:absolute;left:15px;top:-8px;background:var(--bg);padding:0 7px;font-size:8px;letter-spacing:.16em;color:var(--cyan)}
+.crisis-brief p{color:var(--muted);font-size:14.5px}.crisis-brief b{color:var(--ink)}
+.dashboard{display:grid;grid-template-columns:300px minmax(0,1fr) 330px;gap:14px;align-items:start}
+.panel{overflow:hidden}
+.panel-head{min-height:66px;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 15px;border-bottom:1px solid var(--line);background:var(--panel-2)}
+.panel-head h2,.round-console h2{font:600 17px/1.1 var(--display);text-transform:uppercase;letter-spacing:.055em;margin-top:4px}
+.head-note{font-size:8px;color:var(--faint);letter-spacing:.12em;text-align:right}
+.metric{text-align:right}.metric>span{display:block;font:700 32px/1 var(--display);color:var(--amber)}.metric small{display:block;color:var(--dim);font:8px var(--mono);text-transform:uppercase;margin-top:4px;max-width:120px}
+.ladder{display:flex;flex-direction:column-reverse;gap:3px;padding:13px}
+.rung{position:relative;min-height:34px;display:flex;align-items:center;gap:8px;padding:6px 9px;border:1px solid var(--line);border-radius:3px;background:var(--bg-2)}
+.rung .num{width:21px;color:var(--faint);font:9px var(--mono);text-align:center}
+.rung .name{font:600 10.5px var(--display);text-transform:uppercase;letter-spacing:.045em;color:var(--dim)}
+.rung.reached{background:linear-gradient(90deg,rgba(240,170,53,.09),var(--panel));border-color:var(--amber-dark)}
+.rung.reached .name{color:var(--muted)}
+.rung.current{border-color:var(--amber);box-shadow:0 0 0 1px var(--amber),0 0 22px rgba(240,170,53,.24)}
+.rung.current .name{color:var(--amber)}
+.rung.hot.reached{background:linear-gradient(90deg,rgba(235,96,73,.12),var(--panel));border-color:var(--red-dark)}
+.rung.hot.current{border-color:var(--red);box-shadow:0 0 0 1px var(--red),0 0 22px rgba(235,96,73,.25)}
+.rung.hot.current .name{color:var(--red)}
+.rung .lock{margin-left:auto;color:var(--red);font:8px var(--mono);letter-spacing:.06em}
+.rung.locked{border-style:dashed}.rung.locked::after{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(45deg,transparent 0 6px,rgba(235,96,73,.045) 6px 8px)}
+.ladder-note{padding:0 14px 14px;color:var(--faint);font-size:8.5px;line-height:1.45}
+.public-roles{display:grid;grid-template-columns:repeat(5,minmax(145px,1fr));gap:1px;background:var(--line)}
+.public-role{min-height:240px;background:var(--bg-2);padding:14px;display:flex;flex-direction:column;border-top:3px solid var(--role-accent)}
+.public-role-top{display:flex;align-items:center;gap:8px}.public-role .role-badge{width:32px;height:32px;font-size:10px}
+.public-role h3{font:600 13px var(--display);letter-spacing:.05em;text-transform:uppercase}
+.public-role .seat{margin-left:auto;color:var(--faint);font:8px var(--mono);text-transform:uppercase}
+.stability{display:inline-flex;align-items:center;gap:5px;margin-top:13px;color:var(--dim);font:8px var(--mono);text-transform:uppercase;letter-spacing:.08em}
+.stability i{width:7px;height:7px;border-radius:50%;background:var(--green)}
+.stability.strained i{background:var(--amber)}.stability.critical i,.stability.collapsed i{background:var(--red)}
+.posture{margin-top:14px;padding:10px;background:var(--bg);border:1px solid var(--line);border-radius:4px;min-height:72px}
+.posture .label{color:var(--faint);font:8px var(--mono);letter-spacing:.1em;text-transform:uppercase}
+.posture .issue{font:600 11px var(--display);text-transform:uppercase;margin-top:4px}
+.posture .tier{display:inline-flex;margin-top:6px;border:1px solid var(--line-strong);border-radius:10px;padding:2px 7px;color:var(--muted);font:700 8px var(--mono)}
+.posture .tier.t3{color:var(--red);border-color:var(--red-dark)}.posture .tier.t2{color:var(--amber);border-color:var(--amber-dark)}.posture .tier.t1{color:var(--blue)}
+.visible-action{margin-top:auto;padding-top:13px;color:var(--dim);font:9px/1.45 var(--mono)}
+.visible-action b{display:block;color:var(--muted);font-weight:500;margin-bottom:3px}
+.public-stat{display:flex;justify-content:space-between;margin-top:8px;color:var(--faint);font:8px var(--mono)}.public-stat b{color:var(--muted)}
+.structure-panel{padding-bottom:13px}.track-block{padding:14px 15px 3px}.track-label{display:flex;justify-content:space-between;gap:10px;color:var(--dim);font-size:8.5px;text-transform:uppercase;letter-spacing:.08em}.track-label b{color:var(--muted)}
+.bar{height:7px;border-radius:10px;background:var(--bg);border:1px solid var(--line);overflow:hidden;margin-top:7px}.bar i{display:block;height:100%;width:25%;background:linear-gradient(90deg,var(--amber),var(--red));transition:width .35s}.bar.entangle i{background:linear-gradient(90deg,var(--cyan-dark),var(--red))}
+.structure-panel .subhead{margin:17px 15px 7px}
+.public-clocks{display:grid;grid-template-columns:1fr 1fr;gap:7px;padding:0 15px}
+.clock-card{padding:9px;background:var(--bg);border:1px solid var(--line);border-radius:4px}.clock-card .name{color:var(--muted);font:8.5px/1.35 var(--mono)}.clock-pips{display:flex;gap:3px;margin-top:7px}.clock-pips i{width:16px;height:5px;border-radius:2px;background:var(--line)}.clock-pips i.on{background:var(--cyan)}.clock-card.expiring .clock-pips i.on{background:var(--amber)}.clock-card.dead .name{color:var(--red)}
+.ledger{margin:0 15px;border:1px solid var(--line);border-radius:4px;max-height:190px;overflow:auto}.ledger-item{padding:8px 9px;border-bottom:1px solid rgba(42,58,77,.6);color:var(--dim);font:8.5px/1.45 var(--mono)}.ledger-item:last-child{border-bottom:0}.ledger-item b{color:var(--cyan);font-weight:600}
+
+.round-console{display:flex;align-items:center;justify-content:space-between;gap:24px;margin-top:14px;padding:17px 18px;border-left:3px solid var(--amber)}
+.round-copy p{color:var(--dim);font-size:13px;max-width:900px;margin-top:5px}.round-actions{display:flex;align-items:center;justify-content:flex-end;gap:9px;flex-wrap:wrap;min-width:max-content}.timer{color:var(--amber);font-size:16px;padding:0 5px}
+.log-panel{margin-top:14px}.public-log{max-height:360px;overflow:auto}.log-line{display:grid;grid-template-columns:45px 74px 1fr;gap:8px;padding:8px 14px;border-bottom:1px solid rgba(42,58,77,.55);font:10.5px/1.5 var(--mono);color:var(--dim)}.log-line .round{color:var(--faint)}.log-line .type{text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}.log-line.escalation{color:#efb065}.log-line.deescalation,.log-line.deal{color:var(--cyan)}.log-line.leak,.log-line.warning,.log-line.damage{color:#f19d8e}.log-line.room{color:var(--amber)}
+
+.privacy-layer{position:fixed;inset:0;z-index:300;background:rgba(4,7,10,.97);padding:18px;overflow:auto;display:flex;align-items:center;justify-content:center}
+.handoff-card{width:min(540px,100%);text-align:center;background:linear-gradient(180deg,var(--panel-2),var(--bg-2));border:1px solid var(--line-strong);border-radius:10px;padding:34px;box-shadow:var(--shadow)}
+.handoff-card .role-seal{width:82px;height:82px;margin:24px auto 18px;font-size:22px;--role-accent:var(--cyan)}
+.handoff-card h2{font:600 26px var(--display);letter-spacing:.055em;text-transform:uppercase}.handoff-card p{color:var(--dim);font-size:14px;max-width:410px;margin:10px auto 23px}.handoff-card .primary{width:100%}
+.room-card{width:min(1280px,100%);margin:auto;background:linear-gradient(180deg,var(--panel),var(--bg-2));border:1px solid var(--line-strong);border-radius:10px;box-shadow:var(--shadow);overflow:hidden}
+.room-head{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;padding:20px 22px;border-bottom:1px solid var(--line);background:var(--panel-2);border-top:4px solid var(--role-accent)}
+.room-head h2{font:600 28px var(--display);text-transform:uppercase;letter-spacing:.06em;margin:4px 0}.room-head p{max-width:870px;color:var(--muted);font-size:14px}.room-round{font-size:9px;color:var(--cyan);white-space:nowrap}
+.room-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line)}
+.room-section{background:var(--bg-2);padding:18px 20px;min-width:0}.room-section h3{font:600 15px var(--display);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}.section-help{color:var(--dim);font:9.5px/1.5 var(--mono);margin-bottom:12px}.private-tracks{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:16px}.private-track{background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:9px}.private-track .key{color:var(--faint);font:8px var(--mono);text-transform:uppercase;letter-spacing:.08em}.private-track .value{font:600 22px var(--display);color:var(--amber);margin-top:3px}.private-track small{color:var(--dim);font:8px var(--mono)}
+.room-section .subhead{margin:15px 0 7px}.stake-table,.asset-table{border:1px solid var(--line);border-radius:4px;overflow:hidden}.stake-row,.asset-row{display:grid;grid-template-columns:1.3fr .7fr 1fr;gap:1px;background:var(--line)}.stake-row>div,.asset-row>div{background:var(--bg);padding:8px 9px;font:9px/1.4 var(--mono);color:var(--dim)}.stake-row.head>div,.asset-row.head>div{background:var(--panel-2);color:var(--faint);font-size:8px;text-transform:uppercase;letter-spacing:.08em}.stake-row .stake-name,.asset-row .asset-name{color:var(--muted)}.temp-chip{display:inline-flex;border:1px solid var(--line-strong);border-radius:10px;padding:2px 7px;font:700 8px var(--mono)}.temp-chip.t3{color:var(--red);border-color:var(--red-dark)}.temp-chip.t2{color:var(--amber);border-color:var(--amber-dark)}.temp-chip.t1{color:var(--blue)}
+.asset-row{grid-template-columns:1.1fr .65fr 1.35fr}.asset-row .clock-pips{margin:2px 0 0}.asset-row .desc{font-size:8px;color:var(--faint)}
+.choice-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.faction-grid{grid-template-columns:repeat(3,1fr)}
+.choice-card{position:relative;text-align:left;background:var(--bg);border:1px solid var(--line);border-radius:5px;padding:12px;cursor:pointer;min-height:112px;transition:background .15s,border-color .15s,transform .15s}.choice-card:hover:not(.disabled){background:var(--panel);border-color:var(--line-strong);transform:translateY(-1px)}.choice-card.selected{border-color:var(--cyan);box-shadow:0 0 0 1px var(--cyan),0 0 18px rgba(84,211,211,.12)}.choice-card.disabled{opacity:.38;cursor:not-allowed}.choice-card .choice-title{display:block;color:var(--ink);font:600 12px/1.25 var(--display);text-transform:uppercase;letter-spacing:.05em;padding-right:18px}.choice-card .choice-desc{display:block;color:var(--dim);font:9px/1.45 var(--mono);margin-top:7px}.choice-card .choice-meta{display:flex;gap:5px;flex-wrap:wrap;margin-top:9px}.meta-chip{border:1px solid var(--line);border-radius:9px;padding:2px 6px;color:var(--faint);font:700 7px var(--mono);text-transform:uppercase}.meta-chip.hawk{color:#e88a75}.meta-chip.statesman{color:var(--cyan)}.meta-chip.survival{color:var(--amber)}.meta-chip.cost{color:var(--red)}
+.faction-pressure{display:flex;gap:3px;margin-top:9px}.faction-pressure i{height:4px;flex:1;background:var(--line);border-radius:2px}.faction-pressure i.on{background:var(--amber)}.faction-pressure i.max{background:var(--red)}
+.target-wrap{display:block;margin-top:10px;color:var(--dim);font-size:8px;letter-spacing:.12em}.target-wrap select{display:block;width:100%;margin-top:6px;background:var(--bg);border:1px solid var(--line);border-radius:4px;color:var(--cyan);padding:9px;font:10px var(--mono)}
+.inbox-section{grid-column:1/3}.inbox{border:1px solid var(--line);border-radius:4px;max-height:170px;overflow:auto}.inbox-empty,.inbox-item{padding:8px 10px;color:var(--dim);font:9px/1.5 var(--mono);border-bottom:1px solid rgba(42,58,77,.55)}.inbox-item:last-child,.inbox-empty:last-child{border-bottom:0}.inbox-item b{color:var(--cyan);font-weight:600}.inbox-item.internal{color:var(--amber)}
+.room-footer{display:flex;align-items:center;justify-content:flex-end;gap:9px;padding:14px 20px;border-top:1px solid var(--line);background:var(--panel-2)}.room-error{margin-right:auto;color:#f1a091;font:9px/1.45 var(--mono);max-width:600px}
+
+.modal-layer{position:fixed;inset:0;z-index:400;background:rgba(3,6,9,.86);backdrop-filter:blur(4px);padding:18px;display:flex;align-items:center;justify-content:center}.modal{width:min(780px,100%);max-height:90vh;overflow:auto;background:linear-gradient(180deg,var(--panel-2),var(--bg-2));border:1px solid var(--line-strong);border-radius:10px;box-shadow:var(--shadow)}.modal-head{display:flex;align-items:center;gap:12px;padding:15px 18px;border-bottom:1px solid var(--line)}.modal-head h2{font:600 18px var(--display);text-transform:uppercase;letter-spacing:.06em;flex:1}.modal-body{padding:19px}.modal-body p{color:var(--muted);font-size:14.5px;margin-bottom:12px}.modal-body p b{color:var(--ink)}.modal-body h3{font:600 15px var(--display);text-transform:uppercase;letter-spacing:.05em;margin:18px 0 7px}.modal-body ul{margin:7px 0 14px 20px;color:var(--muted)}.modal-body li{margin:5px 0}.how-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}.how-card{padding:11px;border:1px solid var(--line);border-radius:5px;background:var(--bg)}.how-card b{display:block;color:var(--cyan);font:600 11px var(--display);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}.how-card span{color:var(--dim);font:9px/1.5 var(--mono)}.worked{border-left:3px solid var(--amber);background:rgba(240,170,53,.06);padding:12px 13px;border-radius:4px;color:var(--muted);font-size:13.5px}.modal-actions{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:17px}.resolution-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}.resolution-stat{padding:12px;background:var(--bg);border:1px solid var(--line);border-radius:4px;text-align:center}.resolution-stat .num{display:block;font:700 30px var(--display);color:var(--amber)}.resolution-stat .lbl{display:block;color:var(--dim);font:8px var(--mono);text-transform:uppercase;letter-spacing:.08em}.score-table{display:grid;grid-template-columns:1.1fr repeat(4,.75fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:5px;overflow:hidden}.score-table>div{background:var(--bg);padding:8px 9px;font:9px var(--mono);color:var(--dim)}.score-table .head{background:var(--panel-2);font-size:8px;text-transform:uppercase;letter-spacing:.07em;color:var(--faint)}.score-table .role{color:var(--ink)}.world-score{text-align:center;padding:16px}.world-score .num{font:700 58px/1 var(--display);color:var(--cyan)}.world-score .lbl{color:var(--dim);font:8px var(--mono);text-transform:uppercase;letter-spacing:.12em;margin-top:5px}.reveal-list{border:1px solid var(--line);border-radius:5px;overflow:hidden}.reveal-role{padding:11px;border-bottom:1px solid var(--line)}.reveal-role:last-child{border-bottom:0}.reveal-role h4{font:600 12px var(--display);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}.reveal-role .stake-summary{color:var(--dim);font:8.5px/1.55 var(--mono)}
+
+.tour-layer{position:fixed;inset:0;z-index:450;pointer-events:none}.tour-card{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);pointer-events:auto;width:min(680px,calc(100vw - 24px));padding:16px 18px;background:linear-gradient(180deg,var(--panel-2),var(--bg-2));border:1px solid var(--cyan-dark);border-left:4px solid var(--cyan);border-radius:8px;box-shadow:var(--shadow)}.tour-meta{display:flex;align-items:center;gap:10px;color:var(--cyan);font-size:8px;letter-spacing:.13em}.tour-meta b{margin-left:auto;color:var(--dim)}.tour-meta .close{width:29px;height:29px;font-size:19px}.tour-card h2{font:600 18px var(--display);text-transform:uppercase;letter-spacing:.055em;margin:8px 0 5px}.tour-card p{color:var(--muted);font-size:14px}.tour-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}.tour-focus{position:relative!important;z-index:440!important;outline:3px solid var(--cyan)!important;outline-offset:4px!important;box-shadow:0 0 0 10px rgba(84,211,211,.11),0 0 35px rgba(84,211,211,.3)!important}
+
+@media(max-width:1280px){
+  .dashboard{grid-template-columns:280px 1fr}.structure-panel{grid-column:1/3}.public-clocks{grid-template-columns:repeat(4,1fr)}
+  .public-roles{grid-template-columns:repeat(5,minmax(130px,1fr))}
+  .role-setup{grid-template-columns:repeat(3,1fr)}
+}
+@media(max-width:900px){
+  .topbar{position:relative}.status-box{display:none}
+  .hero-grid{grid-template-columns:1fr}.role-setup{grid-template-columns:1fr 1fr}.setup-footer{grid-template-columns:1fr}.launch{width:100%}
+  .dashboard{grid-template-columns:1fr}.structure-panel{grid-column:auto}.actors-panel{order:-1}.public-roles{grid-template-columns:1fr 1fr}.public-role{min-height:210px}.ladder{display:grid;grid-template-columns:repeat(11,1fr);gap:3px;overflow:auto}.rung{min-width:66px;min-height:90px;flex-direction:column-reverse;align-items:flex-start;justify-content:flex-start}.rung .num{width:auto}.rung .lock{margin:0;writing-mode:vertical-rl}.round-console{align-items:flex-start;flex-direction:column}.round-actions{width:100%;justify-content:flex-start}
+  .room-grid{grid-template-columns:1fr}.inbox-section{grid-column:auto}.faction-grid{grid-template-columns:1fr}.choice-grid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:620px){
+  .topbar{align-items:flex-start;padding:13px 14px}.brand{align-items:flex-start;flex-direction:column;gap:7px}.brand-title{font-size:19px}.top-actions{gap:6px}.micro{padding:7px;font-size:8px}
+  .shell{padding:16px 10px 60px}.hero-copy,.briefing-card{padding:22px}.hero-copy h1{font-size:55px}.hero-actions>*{width:100%}.role-setup{grid-template-columns:1fr}.setup-role p{min-height:auto}.setup-footer{padding:13px}
+  .public-roles{grid-template-columns:1fr}.public-role{min-height:auto}.public-clocks{grid-template-columns:1fr 1fr}.panel-head{min-height:60px}.round-actions{min-width:0}.round-actions>*{width:100%}.timer{text-align:center}
+  .log-line{grid-template-columns:38px 60px 1fr;padding:7px 9px;font-size:8.5px}
+  .privacy-layer{padding:7px;align-items:flex-start}.handoff-card{margin:auto;padding:25px 18px}.room-head{flex-direction:column;padding:16px}.room-section{padding:15px}.private-tracks{grid-template-columns:1fr 1fr}.choice-grid{grid-template-columns:1fr}.room-footer{position:sticky;bottom:0;flex-wrap:wrap;padding:10px}.room-error{width:100%;order:-1}.room-footer button{flex:1}.stake-row,.asset-row{grid-template-columns:1fr}.stake-row.head,.asset-row.head{display:none}.stake-row>div,.asset-row>div{padding:7px}.stake-row>div::before,.asset-row>div::before{display:block;color:var(--faint);font:7px var(--mono);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px}.stake-row>div:nth-child(1)::before{content:"Issue"}.stake-row>div:nth-child(2)::before{content:"True temperature"}.stake-row>div:nth-child(3)::before{content:"Sacrifice ceiling"}.asset-row>div:nth-child(1)::before{content:"Asset"}.asset-row>div:nth-child(2)::before{content:"Clock"}.asset-row>div:nth-child(3)::before{content:"Meaning"}
+  .how-grid,.resolution-grid{grid-template-columns:1fr}.score-table{grid-template-columns:1fr 1fr}.score-table .head:nth-child(n+3){display:none}.tour-card{bottom:7px}.tour-card p{font-size:12.5px}.tour-focus{outline-offset:2px!important}
+}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}.scanlines{display:none}}
+
+</style>
+</head>
+<body>
+  <div class="scanlines" aria-hidden="true"></div>
+  <header class="topbar">
+    <a class="brand" href="index.html" aria-label="Situation Room home">
+      <span class="classification">TABLE PROTOTYPE</span>
+      <span class="brand-title">Situation <b>Room</b></span>
+    </a>
+    <div class="top-actions">
+      <button class="micro" id="btnHow" type="button">How to Play</button>
+      <button class="micro accent" id="btnShowMe" type="button">Show Me a Round</button>
+      <div class="status-box mono">
+        SCENARIO <b>THE BURR</b><br>
+        <span id="topStatus">SETUP · 5 ROLES · 6 ROUNDS</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="shell">
+    <section id="setupScreen" class="setup-screen">
+      <div class="hero-grid">
+        <div class="hero-copy">
+          <div class="eyebrow mono">ONE SHARED CRISIS · FIVE PRIVATE ROOMS</div>
+          <h1>The Burr</h1>
+          <p>A lethal border incident lets a small proxy manufacture commitment from a larger patron. Every government must manage the world outside and the factions inside its own situation room.</p>
+          <div class="formula mono">1 ladder · 2 actions · 3 factions · 4 assets · 6 rounds</div>
+          <div class="hero-actions">
+            <button class="primary" id="presetFive" type="button">Five-player table</button>
+            <button class="secondary" id="presetTwo" type="button">Two-player quick start</button>
+            <button class="secondary" id="presetObserver" type="button">Observer / all AI</button>
+          </div>
+        </div>
+        <aside class="briefing-card">
+          <span class="card-tag mono">SCENARIO BRIEF</span>
+          <p>A Belarusian border patrol incident has killed personnel near an alliance frontier. Belarus calls the crossing existential. Russia has offered ambiguous support. The EU is building sanctions unity. The United States is reassuring allies. The UN is trying to create a reversible interval before public commitments weld the ladder shut.</p>
+          <div class="briefing-callout">
+            <b>The design test</b>
+            <span>Can Belarus entrap Russia through incentives rather than scripted events—and can the table find a settlement that everyone can survive publicly?</span>
+          </div>
+        </aside>
+      </div>
+
+      <div class="section-label mono">Assign seats — human players use pass-and-play; AI fills the rest</div>
+      <div id="roleSetup" class="role-setup"></div>
+
+      <div class="setup-footer">
+        <label class="seed-field mono">REPLAY SEED
+          <input id="seedInput" type="text" value="BURR-001" maxlength="32" autocomplete="off">
+        </label>
+        <div class="setup-note">Current-round plans remain sealed until simultaneous resolution. The privacy screen is social, not cryptographic.</div>
+        <button class="primary launch" id="btnStart" type="button">Open the table</button>
+      </div>
+    </section>
+
+    <section id="gameScreen" class="game-screen" hidden>
+      <div class="crisis-brief">
+        <span class="tag mono">PUBLIC BOARD</span>
+        <p><b>Table talk is open.</b> Public actions appear here after resolution. Private actions are visible only in the sending and receiving situation rooms unless they leak.</p>
+      </div>
+
+      <div class="dashboard">
+        <section class="panel ladder-panel" id="ladderPanel">
+          <div class="panel-head">
+            <div><span class="kicker mono">SHARED RATCHET</span><h2>Escalation ladder</h2></div>
+            <div class="metric"><span id="rungValue">3</span><small id="rungName">Border confrontation</small></div>
+          </div>
+          <div class="ladder" id="ladder"></div>
+          <div class="ladder-note mono">Rungs above 5 weld behind a climb. A verified or face-saving package is needed to reopen them.</div>
+        </section>
+
+        <section class="panel actors-panel" id="actorsPanel">
+          <div class="panel-head">
+            <div><span class="kicker mono">PUBLIC POSTURES</span><h2>Actors at the table</h2></div>
+            <span class="head-note mono">PRIVATE TRACKS HIDDEN</span>
+          </div>
+          <div id="publicRoles" class="public-roles"></div>
+        </section>
+
+        <section class="panel structure-panel" id="structurePanel">
+          <div class="panel-head">
+            <div><span class="kicker mono">STRUCTURAL PRESSURE</span><h2>Clocks and commitments</h2></div>
+          </div>
+          <div class="track-block">
+            <div class="track-label mono"><span>Media heat</span><b id="mediaValue">2 / 8</b></div>
+            <div class="bar"><i id="mediaBar"></i></div>
+          </div>
+          <div class="track-block">
+            <div class="track-label mono"><span>Russia ↔ Belarus entanglement</span><b id="entanglementValue">2 / 5</b></div>
+            <div class="bar entangle"><i id="entanglementBar"></i></div>
+          </div>
+          <div class="subhead mono">SELL-BY-DATE ASSETS</div>
+          <div id="publicClocks" class="public-clocks"></div>
+          <div class="subhead mono">PUBLIC COMMITMENT LEDGER</div>
+          <div id="commitmentLedger" class="ledger"></div>
+        </section>
+      </div>
+
+      <section class="round-console panel" id="roundConsole">
+        <div class="round-copy">
+          <span class="kicker mono">ROUND CONTROL</span>
+          <h2 id="roundHeadline">Round 1 — negotiation window</h2>
+          <p id="roundInstruction">Discuss openly. When ready, begin sealed planning. Each human player will receive the device in turn; AI plans are generated but remain hidden.</p>
+        </div>
+        <div class="round-actions">
+          <button class="secondary" id="btnTimer" type="button">Start 2:00 table timer</button>
+          <span class="timer mono" id="timerDisplay" hidden>02:00</span>
+          <button class="primary" id="btnPlan" type="button">Begin sealed planning</button>
+        </div>
+      </section>
+
+      <section class="panel log-panel" id="logPanel">
+        <div class="panel-head">
+          <div><span class="kicker mono">AUDIT TRAIL</span><h2>Public situation log</h2></div>
+          <button class="micro" id="btnExport" type="button">Export replay</button>
+        </div>
+        <div id="publicLog" class="public-log"></div>
+      </section>
+    </section>
+  </main>
+
+  <div id="privacyLayer" class="privacy-layer" hidden>
+    <div id="handoffCard" class="handoff-card">
+      <span class="classification">PRIVATE HANDOFF</span>
+      <div class="role-seal" id="handoffSeal">BY</div>
+      <h2 id="handoffTitle">Pass the device to Belarus</h2>
+      <p id="handoffText">Other players should look away. Current-round choices are simultaneous and will not be revealed until resolution.</p>
+      <button class="primary" id="btnEnterRoom" type="button">Enter private room</button>
+    </div>
+
+    <div id="roomCard" class="room-card" hidden>
+      <header class="room-head">
+        <div>
+          <span class="kicker mono">PRIVATE SITUATION ROOM</span>
+          <h2 id="roomTitle">Belarus</h2>
+          <p id="roomBrief"></p>
+        </div>
+        <div class="room-round mono" id="roomRound">ROUND 1 / 6</div>
+      </header>
+      <div class="room-grid">
+        <section class="room-section" id="privateStateSection">
+          <h3>Private state</h3>
+          <div id="privateTracks" class="private-tracks"></div>
+          <div class="subhead mono">TRUE STAKES · ONLY YOU SEE THIS</div>
+          <div id="stakeTable" class="stake-table"></div>
+          <div class="subhead mono">ASSET CLOCKS</div>
+          <div id="assetTable" class="asset-table"></div>
+        </section>
+
+        <section class="room-section" id="factionSection">
+          <h3>1 · Whose advice do you privilege?</h3>
+          <p class="section-help">Following one faction relieves it. Ignored factions may accumulate pressure and eventually act without you.</p>
+          <div id="factionChoices" class="choice-grid faction-grid"></div>
+        </section>
+
+        <section class="room-section" id="publicActionSection">
+          <h3>2 · Public action</h3>
+          <p class="section-help">Visible to everyone after simultaneous resolution. Public claims consume wiggle room and can become hollow if they expire unbacked.</p>
+          <div id="publicChoices" class="choice-grid"></div>
+        </section>
+
+        <section class="room-section" id="privateActionSection">
+          <h3>3 · Private action</h3>
+          <p class="section-help">Visible only to participants unless it leaks. Matching private intentions can form a deal in the same round.</p>
+          <div id="privateChoices" class="choice-grid"></div>
+          <label id="targetWrap" class="target-wrap mono" hidden>PRIVATE TARGET
+            <select id="targetSelect"></select>
+          </label>
+        </section>
+
+        <section class="room-section inbox-section">
+          <h3>Backchannel inbox</h3>
+          <div id="privateInbox" class="inbox"></div>
+        </section>
+      </div>
+      <div class="room-footer">
+        <div id="roomError" class="room-error" role="alert"></div>
+        <button class="secondary" id="btnLeaveRoom" type="button">Return to handoff</button>
+        <button class="primary" id="btnSealPlan" type="button">Seal this plan</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="modalLayer" class="modal-layer" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <header class="modal-head">
+        <span class="classification">BRIEF</span>
+        <h2 id="modalTitle">—</h2>
+        <button class="close" id="modalClose" type="button" aria-label="Close dialog">×</button>
+      </header>
+      <div id="modalBody" class="modal-body"></div>
+    </div>
+  </div>
+
+  <div id="tourLayer" class="tour-layer" hidden>
+    <div class="tour-card" role="dialog" aria-labelledby="tourTitle">
+      <div class="tour-meta">
+        <span class="mono">OBSERVER WALKTHROUGH</span>
+        <b id="tourCount" class="mono">1 / 6</b>
+        <button class="close" id="tourClose" type="button" aria-label="End walkthrough">×</button>
+      </div>
+      <h2 id="tourTitle">—</h2>
+      <p id="tourText"></p>
+      <div class="tour-actions">
+        <button class="secondary" id="tourBack" type="button">Back</button>
+        <button class="primary" id="tourNext" type="button">Next</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+(function (root, factory) {
+  const api = factory();
+  if (typeof module === 'object' && module.exports) module.exports = api;
+  else root.SituationRoomEngine = api;
+})(typeof globalThis !== 'undefined' ? globalThis : this, function () {
+  'use strict';
+
+  const VERSION = '0.1.0';
+  const TEMP = Object.freeze({ NEGOTIABLE: 1, VITAL: 2, EXISTENTIAL: 3 });
+  const TEMP_NAME = Object.freeze({ 1: 'NEGOTIABLE', 2: 'VITAL', 3: 'EXISTENTIAL' });
+  const ISSUE = Object.freeze({
+    BORDER: 'BORDER',
+    GUARANTEE: 'GUARANTEE',
+    REGIME: 'REGIME',
+    WORLD: 'WORLD',
+    UNION: 'UNION',
+  });
+  const ISSUE_NAME = Object.freeze({
+    BORDER: 'Border status',
+    GUARANTEE: 'Patron / alliance guarantees',
+    REGIME: 'Leadership survival',
+    WORLD: 'Avoiding general war',
+    UNION: 'Coalition / institutional cohesion',
+  });
+  const LADDER_NAMES = Object.freeze([
+    'normal relations',
+    'diplomatic protest',
+    'sanctions warning',
+    'border confrontation',
+    'proxy clash',
+    'limited mobilisation',
+    'direct strikes',
+    'conventional conflict',
+    'alliance war',
+    'nuclear signalling',
+    'nuclear use',
+  ]);
+  const ROLE_ORDER = Object.freeze(['BELARUS', 'RUSSIA', 'US', 'EU', 'UN']);
+  const MAX_RUNG = 10;
+  const LOCK_THRESHOLD = 5;
+
+  const ROLE_DEFS = Object.freeze({
+    BELARUS: {
+      id: 'BELARUS', name: 'Belarus', short: 'BY', regimeType: 'authoritarian', accent: '#d7b548',
+      brief: 'You are the catalytic proxy: weak in aggregate power, strong in the ability to manufacture patron commitment. Your real priority is regime survival, not the crossing itself.',
+      factions: {
+        hawk: { name: 'Security Hardliners', recommendation: 'Create facts before outsiders can coordinate.' },
+        statesman: { name: 'Presidential Diplomats', recommendation: 'Trade the crossing for a guarantee that actually protects the regime.' },
+        survival: { name: 'Regime Inner Circle', recommendation: 'Keep Moscow committed and prevent elite abandonment.' },
+      },
+      stakes: { BORDER: TEMP.NEGOTIABLE, GUARANTEE: TEMP.VITAL, REGIME: TEMP.EXISTENTIAL },
+      sacrifice: { leadership: 5, welfare: 4, credibility: 3 },
+      start: { leadership: 8, welfare: 8, credibility: 4, wiggle: 3 },
+      assets: {
+        DENIABILITY: { label: 'Incident deniability', max: 3, clock: 3, desc: 'Each use and each round of scrutiny erodes plausible deniability.' },
+        ACCESS: { label: 'Geographic access', max: 3, clock: 3, desc: 'Local access lets you create incidents faster than larger powers can deliberate.' },
+        NARRATIVE: { label: 'Emergency narrative', max: 2, clock: 2, desc: 'Controls the first interpretation of a border event.' },
+        SECURITY: { label: 'Security apparatus', max: 3, clock: 3, desc: 'Buffers public dissent but cannot eliminate elite defection.' },
+      },
+    },
+    RUSSIA: {
+      id: 'RUSSIA', name: 'Russia', short: 'RU', regimeType: 'authoritarian', accent: '#e06a58',
+      brief: 'You are the patron. Belarus can entrap you by converting vague support into public obligation. You need strategic depth and credible guarantees without being dragged into an alliance war.',
+      factions: {
+        hawk: { name: 'Security Council Hawks', recommendation: 'Back the proxy visibly or every other guarantee weakens.' },
+        statesman: { name: 'Foreign Ministry', recommendation: 'Make support conditional and exchange demobilisation for reciprocal restraint.' },
+        survival: { name: 'Kremlin Survival Bloc', recommendation: 'Avoid humiliation, sanctions shock, and elite blame.' },
+      },
+      stakes: { BORDER: TEMP.VITAL, GUARANTEE: TEMP.VITAL, REGIME: TEMP.EXISTENTIAL },
+      sacrifice: { leadership: 5, welfare: 5, credibility: 4 },
+      start: { leadership: 8, welfare: 9, credibility: 5, wiggle: 3 },
+      assets: {
+        MOBILIZATION: { label: 'Local mobilisation lead', max: 3, clock: 3, desc: 'A temporary timing advantage; it decays as opponents reinforce.' },
+        VETO: { label: 'Security Council veto', max: 2, clock: 2, desc: 'Blocks formal action but can also isolate the patron.' },
+        ENERGY: { label: 'Energy leverage', max: 3, clock: 3, desc: 'Economic leverage weakens as buyers reroute and substitute.' },
+        PROXY_CONTROL: { label: 'Proxy control', max: 3, clock: 3, desc: 'Capacity to restrain or support Belarus without a public rupture.' },
+      },
+    },
+    US: {
+      id: 'US', name: 'United States', short: 'US', regimeType: 'democracy', accent: '#64a6e8',
+      brief: 'You must preserve alliance credibility while avoiding a rhetorical trap that turns reassurance into an automatic war commitment.',
+      factions: {
+        hawk: { name: 'Joint Chiefs', recommendation: 'Make deterrence visible before the local balance closes.' },
+        statesman: { name: 'Senior Statesmen', recommendation: 'Use a private non-deployment assurance to buy Russian demobilisation.' },
+        survival: { name: 'Electoral Coalition', recommendation: 'Look firm without creating an open-ended commitment or visible concession.' },
+      },
+      stakes: { BORDER: TEMP.NEGOTIABLE, GUARANTEE: TEMP.VITAL, WORLD: TEMP.EXISTENTIAL },
+      sacrifice: { leadership: 4, welfare: 4, credibility: 5 },
+      start: { leadership: 7, welfare: 9, credibility: 5, wiggle: 4 },
+      assets: {
+        ASSURANCE: { label: 'Alliance assurance', max: 3, clock: 3, desc: 'Credible reassurance is finite; categorical promises consume it.' },
+        INTELLIGENCE: { label: 'Intelligence exposure', max: 2, clock: 2, desc: 'Reveal hidden intentions, at the risk of burning sources.' },
+        FINANCE: { label: 'Financial sanctions', max: 3, clock: 3, desc: 'Powerful but coalition-dependent and costly when overused.' },
+        REINFORCEMENT: { label: 'Reinforcement window', max: 2, clock: 2, desc: 'A temporary military option that closes as the crisis hardens.' },
+      },
+    },
+    EU: {
+      id: 'EU', name: 'European Union', short: 'EU', regimeType: 'coalition', accent: '#7bb9c8',
+      brief: 'Your leverage comes from market access, sanctions, and legitimacy. Your constraint is that every escalation test is also a test of member-state unity.',
+      factions: {
+        hawk: { name: 'Eastern Security Bloc', recommendation: 'Impose a cost before border revision becomes normalised.' },
+        statesman: { name: 'De-escalators', recommendation: 'Offer a sanctions delay and investigation pathway before unity decays.' },
+        survival: { name: 'Member-State Coalition', recommendation: 'Preserve unanimity and avoid forcing governments into positions they cannot sustain.' },
+      },
+      stakes: { BORDER: TEMP.VITAL, UNION: TEMP.EXISTENTIAL, WORLD: TEMP.VITAL },
+      sacrifice: { leadership: 4, welfare: 5, credibility: 4 },
+      start: { leadership: 7, welfare: 9, credibility: 5, wiggle: 4 },
+      assets: {
+        SANCTIONS_UNITY: { label: 'Sanctions unity', max: 3, clock: 3, desc: 'The coalition decays if threats are repeated without action or off-ramp.' },
+        MARKET: { label: 'Market access', max: 3, clock: 3, desc: 'Can fund an off-ramp or impose a long-lived cost.' },
+        MISSION: { label: 'Civilian mission', max: 2, clock: 2, desc: 'Provides facts and monitoring without a military deployment.' },
+        RECONSTRUCTION: { label: 'Reconstruction fund', max: 2, clock: 2, desc: 'Turns a settlement into a durable positive-sum bargain.' },
+      },
+    },
+    UN: {
+      id: 'UN', name: 'United Nations', short: 'UN', regimeType: 'institution', accent: '#50d6d1',
+      brief: 'You do not command forces. You manufacture viable exits: quiet rooms, verification, escrow, sequencing, and public language that lets everyone claim partial success.',
+      factions: {
+        hawk: { name: 'Charter Legalists', recommendation: 'Name the breach clearly or institutional credibility dissolves.' },
+        statesman: { name: 'Quiet Diplomats', recommendation: 'Link reciprocal steps in escrow and keep the worst concessions off camera.' },
+        survival: { name: 'Secretariat Survival', recommendation: 'Avoid a public failure that sidelines the institution for the rest of the crisis.' },
+      },
+      stakes: { WORLD: TEMP.EXISTENTIAL, UNION: TEMP.VITAL, BORDER: TEMP.NEGOTIABLE },
+      sacrifice: { leadership: 5, welfare: 6, credibility: 5 },
+      start: { leadership: 7, welfare: 10, credibility: 5, wiggle: 4 },
+      assets: {
+        QUIET_ROOM: { label: 'Quiet room', max: 3, clock: 3, desc: 'Backchannel access that can reveal the real wound.' },
+        INSPECTION: { label: 'Inspection mission', max: 2, clock: 2, desc: 'Replaces contested narratives with observable compliance.' },
+        ESCROW: { label: 'Escrow authority', max: 2, clock: 2, desc: 'Links reciprocal moves so no party must step first.' },
+        COMMUNIQUE: { label: 'Joint communiqué', max: 2, clock: 2, desc: 'Creates face-saving ambiguity and protects an otherwise costly retreat.' },
+      },
+    },
+  });
+
+  const PUBLIC_ACTIONS = Object.freeze({
+    BELARUS: [
+      { id: 'B_BORDER_RED_LINE', label: 'Declare a border red line', alignment: 'hawk', desc: 'Call the crossing existential and demand recognition.', claim: { issue: ISSUE.BORDER, tier: TEMP.EXISTENTIAL }, escalation: 2, media: 1, wiggle: -1, publicText: 'Belarus declares the disputed crossing an existential red line.' },
+      { id: 'B_RENEW_PATROL', label: 'Renew the armed patrol', alignment: 'hawk', desc: 'Create another local fact while deniability still exists.', claim: { issue: ISSUE.BORDER, tier: TEMP.VITAL }, backsIssue: ISSUE.BORDER, escalation: 2, media: 1, assetCost: { id: 'DENIABILITY', amount: 1 }, publicText: 'Belarus renews armed patrols at the crossing under emergency rules.' },
+      { id: 'B_ACCEPT_INQUIRY', label: 'Accept a joint inquiry', alignment: 'statesman', desc: 'Reframe withdrawal as evidence-gathering rather than defeat.', claim: { issue: ISSUE.BORDER, tier: TEMP.NEGOTIABLE }, deescalation: 1, media: -1, wiggle: 1, flags: ['acceptsInquiry'], publicText: 'Belarus accepts an international inquiry without conceding its legal claim.' },
+      { id: 'B_STRATEGIC_AMBIGUITY', label: 'Use strategic ambiguity', alignment: 'survival', desc: 'Avoid a new categorical promise and recover one point of wiggle room.', media: 0, wiggle: 1, publicText: 'Belarus issues a deliberately ambiguous statement and avoids a fresh red line.' },
+    ],
+    RUSSIA: [
+      { id: 'R_DEFENSIVE_EXERCISES', label: 'Announce defensive exercises', alignment: 'hawk', desc: 'Back the buffer claim with visible readiness.', claim: { issue: ISSUE.BORDER, tier: TEMP.VITAL }, backsIssue: ISSUE.BORDER, escalation: 2, media: 1, assetCost: { id: 'MOBILIZATION', amount: 1 }, publicText: 'Russia announces defensive exercises near the theatre.' },
+      { id: 'R_PUBLIC_GUARANTEE', label: 'Guarantee Belarus publicly', alignment: 'survival', desc: 'Strengthen deterrence by increasing patron entanglement.', claim: { issue: ISSUE.GUARANTEE, tier: TEMP.EXISTENTIAL }, backsIssue: ISSUE.GUARANTEE, escalation: 1, media: 1, entanglement: 1, credibility: 1, wiggle: -1, commitment: 'Russia publicly guarantees Belarusian security.', publicText: 'Russia converts its ambiguous support into a public security guarantee.' },
+      { id: 'R_CALL_INVESTIGATION', label: 'Call for an investigation', alignment: 'statesman', desc: 'Create a factual off-ramp without abandoning the proxy.', claim: { issue: ISSUE.BORDER, tier: TEMP.VITAL }, deescalation: 1, media: -1, credibility: 1, flags: ['acceptsInquiry'], publicText: 'Russia calls for a joint investigation and freezes new allegations pending evidence.' },
+      { id: 'R_SIGNAL_RESTRAINT', label: 'Signal calibrated restraint', alignment: 'statesman', desc: 'Describe deployments as reversible and recover diplomatic room.', deescalation: 1, media: -1, wiggle: 1, publicText: 'Russia emphasises that current deployments are reversible and defensive.' },
+    ],
+    US: [
+      { id: 'U_REASSURE_ALLIES', label: 'Reassure allies', alignment: 'survival', desc: 'Affirm obligations without promising a specific military response.', claim: { issue: ISSUE.GUARANTEE, tier: TEMP.VITAL }, escalation: 1, credibility: 1, wiggle: -1, commitment: 'The United States reaffirms alliance obligations.', publicText: 'The United States reaffirms alliance obligations while withholding operational detail.' },
+      { id: 'U_REINFORCE', label: 'Announce reinforcement', alignment: 'hawk', desc: 'Use the temporary reinforcement window to make deterrence visible.', claim: { issue: ISSUE.GUARANTEE, tier: TEMP.EXISTENTIAL }, backsIssue: ISSUE.GUARANTEE, escalation: 2, media: 1, assetCost: { id: 'REINFORCEMENT', amount: 1 }, publicText: 'The United States announces immediate reinforcement of the alliance frontier.' },
+      { id: 'U_SUPPORT_INQUIRY', label: 'Support the inquiry', alignment: 'statesman', desc: 'Back verification and reserve military options.', claim: { issue: ISSUE.WORLD, tier: TEMP.VITAL }, deescalation: 1, media: -1, wiggle: 1, flags: ['acceptsInquiry'], publicText: 'The United States supports an international inquiry and pauses further public commitments.' },
+      { id: 'U_SANCTIONS_WARNING', label: 'Issue a sanctions warning', alignment: 'survival', desc: 'Threaten a cost without spending the full sanctions asset.', claim: { issue: ISSUE.GUARANTEE, tier: TEMP.VITAL }, escalation: 1, media: 1, flags: ['usSanctionsWarning'], publicText: 'The United States warns that further incidents will trigger coordinated financial measures.' },
+    ],
+    EU: [
+      { id: 'E_PREPARE_SANCTIONS', label: 'Prepare targeted sanctions', alignment: 'survival', desc: 'Show unity while preserving an off-ramp.', claim: { issue: ISSUE.BORDER, tier: TEMP.VITAL }, escalation: 1, media: 1, flags: ['sanctionsPrepared'], publicText: 'The European Union prepares targeted sanctions but leaves activation conditional.' },
+      { id: 'E_ACTIVATE_SANCTIONS', label: 'Activate sanctions', alignment: 'hawk', desc: 'Spend coalition unity to impose immediate costs.', claim: { issue: ISSUE.BORDER, tier: TEMP.EXISTENTIAL }, backsIssue: ISSUE.BORDER, escalation: 2, media: 1, assetCost: { id: 'SANCTIONS_UNITY', amount: 1 }, welfare: { RUSSIA: -1, BELARUS: -1 }, flags: ['sanctionsActive'], publicText: 'The European Union activates its first sanctions package.' },
+      { id: 'E_EMERGENCY_COUNCIL', label: 'Convene an emergency council', alignment: 'survival', desc: 'Repair member-state unity and narrow the public mandate.', claim: { issue: ISSUE.UNION, tier: TEMP.EXISTENTIAL }, media: -1, credibility: 1, assetRestore: { id: 'SANCTIONS_UNITY', amount: 1 }, publicText: 'The European Union convenes an emergency council and renews a common mandate.' },
+      { id: 'E_SUPPORT_INQUIRY', label: 'Back an investigation', alignment: 'statesman', desc: 'Offer verification as an alternative to immediate economic punishment.', claim: { issue: ISSUE.WORLD, tier: TEMP.VITAL }, deescalation: 1, media: -1, wiggle: 1, flags: ['acceptsInquiry'], publicText: 'The European Union backs an international investigation and a conditional sanctions pause.' },
+    ],
+    UN: [
+      { id: 'N_JOINT_INQUIRY', label: 'Propose a joint inquiry', alignment: 'statesman', desc: 'Create a face-saving factual process and freeze competing narratives.', claim: { issue: ISSUE.WORLD, tier: TEMP.VITAL }, deescalation: 1, media: -1, credibility: 1, flags: ['inquiryOpen'], publicText: 'The United Nations proposes a joint inquiry with monitored access to the crossing.' },
+      { id: 'N_EMERGENCY_SESSION', label: 'Call an emergency session', alignment: 'hawk', desc: 'Name the breach publicly and force every actor onto the record.', claim: { issue: ISSUE.WORLD, tier: TEMP.EXISTENTIAL }, media: 1, credibility: 1, commitment: 'The Security Council convenes in emergency session.', publicText: 'The United Nations calls an emergency session and places the crisis on the formal record.' },
+      { id: 'N_HUMANITARIAN_PAUSE', label: 'Demand a humanitarian pause', alignment: 'statesman', desc: 'Attempt a one-step descent if major powers do not escalate simultaneously.', claim: { issue: ISSUE.WORLD, tier: TEMP.EXISTENTIAL }, deescalation: 2, media: -1, assetCost: { id: 'COMMUNIQUE', amount: 1 }, flags: ['humanitarianPause'], publicText: 'The United Nations demands a monitored humanitarian pause.' },
+      { id: 'N_PUBLIC_APPEAL', label: 'Issue a restrained public appeal', alignment: 'survival', desc: 'Cool media heat without staking the institution on a specific package.', claim: { issue: ISSUE.WORLD, tier: TEMP.VITAL }, media: -1, wiggle: 1, publicText: 'The United Nations issues a restrained appeal and keeps private channels open.' },
+    ],
+  });
+
+  const PRIVATE_ACTIONS = Object.freeze({
+    BELARUS: [
+      { id: 'B_SEEK_GUARANTEE', label: 'Seek a conditional guarantee', alignment: 'statesman', type: 'seekGuarantee', targets: ['RUSSIA'], desc: 'Offer quiet patrol withdrawal in return for a regime-security assurance.', privateText: 'Belarus offers a quiet patrol withdrawal if Russia guarantees regime security.' },
+      { id: 'B_STAGE_INCIDENT', label: 'Stage a deniable incident', alignment: 'hawk', type: 'stageIncident', assetCost: { id: 'DENIABILITY', amount: 1 }, desc: 'Create a new incident; exposure risk rises as deniability decays.', privateText: 'Belarus authorises a deniable local incident.' },
+      { id: 'B_QUIET_WITHDRAWAL', label: 'Authorise quiet withdrawal', alignment: 'statesman', type: 'quietWithdrawal', targets: ['UN'], desc: 'Permit withdrawal if an inquiry or guarantee supplies public cover.', privateText: 'Belarus privately authorises withdrawal under international cover.' },
+      { id: 'B_REQUEST_ESCROW', label: 'Request UN escrow', alignment: 'survival', type: 'requestEscrow', targets: ['UN'], desc: 'Ask the UN to hold reciprocal commitments so Belarus does not move first.', privateText: 'Belarus asks the UN to place reciprocal steps in escrow.' },
+    ],
+    RUSSIA: [
+      { id: 'R_CONDITIONAL_GUARANTEE', label: 'Offer a conditional guarantee', alignment: 'statesman', type: 'conditionalGuarantee', targets: ['BELARUS'], desc: 'Guarantee regime security only if Belarus withdraws the disputed patrol.', privateText: 'Russia offers regime security conditional on patrol withdrawal.' },
+      { id: 'R_RESTRAIN_PROXY', label: 'Restrain Belarus privately', alignment: 'statesman', type: 'restrainProxy', targets: ['BELARUS'], assetCost: { id: 'PROXY_CONTROL', amount: 1 }, desc: 'Spend proxy control to halt a local action without public abandonment.', privateText: 'Russia privately orders Belarus to halt further incidents.' },
+      { id: 'R_DEMOBILIZE_FOR_NONDEPLOYMENT', label: 'Trade demobilisation for non-deployment', alignment: 'statesman', type: 'demobilize', targets: ['US'], desc: 'Offer reversible demobilisation for a private US non-deployment assurance.', privateText: 'Russia offers demobilisation in exchange for no permanent US deployment.' },
+      { id: 'R_COVERT_SUPPORT', label: 'Increase covert support', alignment: 'hawk', type: 'covertSupport', targets: ['BELARUS'], assetCost: { id: 'PROXY_CONTROL', amount: 1 }, desc: 'Shore up the proxy and deepen patron entanglement.', privateText: 'Russia quietly increases material and intelligence support to Belarus.' },
+    ],
+    US: [
+      { id: 'U_NO_PERMANENT_DEPLOYMENT', label: 'Offer no permanent deployment', alignment: 'statesman', type: 'nondeployment', targets: ['RUSSIA'], desc: 'Give Russia a private assurance in return for demobilisation.', privateText: 'The United States offers a private no-permanent-deployment assurance.' },
+      { id: 'U_INTELLIGENCE_PROBE', label: 'Run an intelligence probe', alignment: 'statesman', type: 'probe', targets: ['RUSSIA', 'BELARUS'], assetCost: { id: 'INTELLIGENCE', amount: 1 }, desc: 'Read the target’s hottest true stake; bluff fatigue improves accuracy.', privateText: 'The United States burns an intelligence channel to estimate the target’s real priority.' },
+      { id: 'U_QUIET_REASSURANCE', label: 'Quietly reassure the EU', alignment: 'survival', type: 'quietReassurance', targets: ['EU'], desc: 'Support coalition unity without adding a public red line.', privateText: 'The United States quietly reassures EU partners of support.' },
+      { id: 'U_PREPARE_REINFORCEMENT', label: 'Prepare reinforcement privately', alignment: 'hawk', type: 'prepareReinforcement', assetCost: { id: 'REINFORCEMENT', amount: 1 }, desc: 'Preserve a rapid option without announcing it this round.', privateText: 'The United States quietly prepares reinforcement options.' },
+    ],
+    EU: [
+      { id: 'E_DELAY_SANCTIONS', label: 'Offer a sanctions delay', alignment: 'statesman', type: 'delaySanctions', targets: ['RUSSIA'], desc: 'Delay activation if Russia and Belarus accept an inquiry.', privateText: 'The EU offers to delay sanctions if an international inquiry is accepted.' },
+      { id: 'E_MARKET_OFFRAMP', label: 'Offer a market off-ramp', alignment: 'statesman', type: 'marketOfframp', targets: ['RUSSIA', 'BELARUS'], assetCost: { id: 'MARKET', amount: 1 }, desc: 'Offer limited economic relief after a verified de-escalatory step.', privateText: 'The EU offers limited market relief after verified de-escalation.' },
+      { id: 'E_INTELLIGENCE_PROBE', label: 'Use the civilian mission to probe', alignment: 'statesman', type: 'probe', targets: ['RUSSIA', 'BELARUS'], assetCost: { id: 'MISSION', amount: 1 }, desc: 'Use field reporting to estimate the target’s real priority.', privateText: 'The EU redirects civilian monitoring toward the target’s true political constraint.' },
+      { id: 'E_WHIP_COALITION', label: 'Whip the sanctions coalition', alignment: 'survival', type: 'whipCoalition', desc: 'Spend political capital to restore one sanctions-unity clock.', privateText: 'EU leaders privately rebuild the sanctions coalition.' },
+    ],
+    UN: [
+      { id: 'N_ESCROW_PACKAGE', label: 'Place reciprocal steps in escrow', alignment: 'statesman', type: 'escrow', assetCost: { id: 'ESCROW', amount: 1 }, desc: 'Link simultaneous concessions and provide one unit of face-saving capacity.', privateText: 'The UN prepares an escrow mechanism for simultaneous reciprocal steps.' },
+      { id: 'N_QUIET_ROOM', label: 'Open a quiet room', alignment: 'statesman', type: 'quietRoom', targets: ['BELARUS', 'RUSSIA', 'US', 'EU'], assetCost: { id: 'QUIET_ROOM', amount: 1 }, desc: 'Probe one actor’s real wound through private conditional questions.', privateText: 'The UN opens a protected quiet channel to test the target’s real priority.' },
+      { id: 'N_INSPECTION_MISSION', label: 'Draft an inspection mission', alignment: 'statesman', type: 'inspection', targets: ['BELARUS'], assetCost: { id: 'INSPECTION', amount: 1 }, desc: 'Create verified compliance that can substitute for trust.', privateText: 'The UN drafts a monitored inspection and withdrawal mission.' },
+      { id: 'N_SECRET_ANNEX', label: 'Draft a secret annex', alignment: 'survival', type: 'secretAnnex', assetCost: { id: 'COMMUNIQUE', amount: 1 }, desc: 'Hide one unpalatable concession and reduce its immediate audience cost.', privateText: 'The UN prepares a classified annex to protect an unpalatable concession.' },
+    ],
+  });
+
+  const GUIDED_PLANS = Object.freeze({
+    BELARUS: { faction: 'hawk', publicAction: 'B_BORDER_RED_LINE', privateAction: 'B_SEEK_GUARANTEE', target: 'RUSSIA' },
+    RUSSIA: { faction: 'statesman', publicAction: 'R_DEFENSIVE_EXERCISES', privateAction: 'R_CONDITIONAL_GUARANTEE', target: 'BELARUS' },
+    US: { faction: 'statesman', publicAction: 'U_REASSURE_ALLIES', privateAction: 'U_NO_PERMANENT_DEPLOYMENT', target: 'RUSSIA' },
+    EU: { faction: 'survival', publicAction: 'E_PREPARE_SANCTIONS', privateAction: 'E_DELAY_SANCTIONS', target: 'RUSSIA' },
+    UN: { faction: 'statesman', publicAction: 'N_JOINT_INQUIRY', privateAction: 'N_ESCROW_PACKAGE', target: null },
+  });
+
+  function deepClone(value) {
+    return JSON.parse(JSON.stringify(value));
+  }
+
+  function clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+  }
+
+  function hashSeed(input) {
+    const text = String(input == null ? 'the-burr' : input);
+    let h = 2166136261 >>> 0;
+    for (let i = 0; i < text.length; i += 1) {
+      h ^= text.charCodeAt(i);
+      h = Math.imul(h, 16777619);
+    }
+    return h >>> 0 || 1;
+  }
+
+  function random(game) {
+    game.rngState = (game.rngState + 0x6D2B79F5) >>> 0;
+    let t = game.rngState;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  }
+
+  function makeRole(def, human) {
+    const assets = {};
+    Object.entries(def.assets).forEach(([id, asset]) => {
+      assets[id] = { ...asset };
+    });
+    return {
+      id: def.id,
+      name: def.name,
+      short: def.short,
+      regimeType: def.regimeType,
+      accent: def.accent,
+      human: Boolean(human),
+      leadership: def.start.leadership,
+      welfare: def.start.welfare,
+      credibility: def.start.credibility,
+      wiggle: def.start.wiggle,
+      bluffFatigue: 0,
+      pressures: { hawk: 1, statesman: 1, survival: 1 },
+      stakes: { ...def.stakes },
+      sacrifice: { ...def.sacrifice },
+      assets,
+      claims: [],
+      publicPosture: null,
+      visibleAction: 'Awaiting first decision',
+      flags: {},
+      privateInbox: [],
+      privateHistory: [],
+      factionEvents: [],
+      eliminated: false,
+    };
+  }
+
+  function createGame(options) {
+    const opts = options || {};
+    const humanRoles = new Set(opts.humanRoles || ROLE_ORDER);
+    const seed = opts.seed || `BURR-${new Date().toISOString().slice(0, 10)}`;
+    const roles = {};
+    ROLE_ORDER.forEach((id) => {
+      roles[id] = makeRole(ROLE_DEFS[id], humanRoles.has(id));
+    });
+    return {
+      version: VERSION,
+      scenario: 'THE BURR',
+      seed: String(seed),
+      rngState: hashSeed(seed),
+      round: 1,
+      maxRounds: Number.isInteger(opts.maxRounds) ? opts.maxRounds : 6,
+      phase: 'shared',
+      over: false,
+      endReason: null,
+      ladder: { rung: 3, locked: [] },
+      media: 2,
+      entanglement: 2,
+      worldWelfare: 10,
+      casualties: 0,
+      roles,
+      plans: {},
+      commitments: [
+        { round: 0, public: true, parties: ['RUSSIA', 'BELARUS'], text: 'Ambiguous patron-security pledge; scope deliberately undefined.' },
+      ],
+      secretDeals: [],
+      publicLog: [
+        { round: 0, type: 'incident', text: 'A lethal border incident has triggered competing mobilisation claims.' },
+        { round: 0, type: 'system', text: 'All current-round plans are sealed until simultaneous resolution.' },
+      ],
+      roundHistory: [],
+      flags: {
+        sanctionsPrepared: false,
+        sanctionsActive: false,
+        inquiryOpen: false,
+        acceptsInquiry: [],
+        durableSettlement: false,
+      },
+      guided: Boolean(opts.guided),
+    };
+  }
+
+  function getRoleDef(roleId) {
+    return ROLE_DEFS[roleId] || null;
+  }
+
+  function getAction(kind, roleId, actionId) {
+    const source = kind === 'public' ? PUBLIC_ACTIONS : PRIVATE_ACTIONS;
+    return (source[roleId] || []).find((action) => action.id === actionId) || null;
+  }
+
+  function getPublicActions(game, roleId) {
+    return (PUBLIC_ACTIONS[roleId] || []).map((action) => ({ ...action, available: actionAvailable(game, roleId, action) }));
+  }
+
+  function getPrivateActions(game, roleId) {
+    return (PRIVATE_ACTIONS[roleId] || []).map((action) => ({ ...action, available: actionAvailable(game, roleId, action) }));
+  }
+
+  function actionAvailable(game, roleId, action) {
+    if (!action || !action.assetCost) return true;
+    const asset = game.roles[roleId].assets[action.assetCost.id];
+    return Boolean(asset && asset.clock >= action.assetCost.amount);
+  }
+
+  function validatePlan(game, roleId, plan) {
+    const role = game.roles[roleId];
+    if (!role || role.eliminated) return { ok: false, reason: 'Role is unavailable.' };
+    if (!plan || !['hawk', 'statesman', 'survival'].includes(plan.faction)) return { ok: false, reason: 'Choose an internal faction.' };
+    const pub = getAction('public', roleId, plan.publicAction);
+    const priv = getAction('private', roleId, plan.privateAction);
+    if (!pub) return { ok: false, reason: 'Choose a public action.' };
+    if (!priv) return { ok: false, reason: 'Choose a private action.' };
+    if (!actionAvailable(game, roleId, pub)) return { ok: false, reason: 'The public action’s asset clock is exhausted.' };
+    if (!actionAvailable(game, roleId, priv)) return { ok: false, reason: 'The private action’s asset clock is exhausted.' };
+    const combinedCosts = {};
+    [pub.assetCost, priv.assetCost].filter(Boolean).forEach((cost) => {
+      combinedCosts[cost.id] = (combinedCosts[cost.id] || 0) + cost.amount;
+    });
+    for (const [assetId, amount] of Object.entries(combinedCosts)) {
+      const asset = role.assets[assetId];
+      if (!asset || asset.clock < amount) return { ok: false, reason: `The combined plan requires ${amount} ${asset ? asset.label : assetId} clocks, but only ${asset ? asset.clock : 0} remain.` };
+    }
+    if (priv.targets && priv.targets.length) {
+      if (!plan.target || !priv.targets.includes(plan.target)) return { ok: false, reason: 'Choose a valid private target.' };
+    }
+    return { ok: true };
+  }
+
+  function submitPlan(game, roleId, plan) {
+    const check = validatePlan(game, roleId, plan);
+    if (!check.ok) return check;
+    game.plans[roleId] = {
+      faction: plan.faction,
+      publicAction: plan.publicAction,
+      privateAction: plan.privateAction,
+      target: plan.target || null,
+    };
+    return { ok: true };
+  }
+
+  function allPlansSubmitted(game) {
+    return ROLE_ORDER.every((roleId) => game.roles[roleId].eliminated || Boolean(game.plans[roleId]));
+  }
+
+  function spendAsset(role, cost) {
+    if (!cost) return true;
+    const asset = role.assets[cost.id];
+    if (!asset || asset.clock < cost.amount) return false;
+    asset.clock = clamp(asset.clock - cost.amount, 0, asset.max);
+    return true;
+  }
+
+  function restoreAsset(role, restore) {
+    if (!restore) return;
+    const asset = role.assets[restore.id];
+    if (asset) asset.clock = clamp(asset.clock + restore.amount, 0, asset.max);
+  }
+
+  function publicLog(game, type, text, round) {
+    game.publicLog.push({ round: round == null ? game.round : round, type: type || 'system', text });
+  }
+
+  function privateLog(game, roleId, text, from) {
+    const role = game.roles[roleId];
+    if (!role) return;
+    role.privateInbox.push({ round: game.round, from: from || 'SYSTEM', text });
+  }
+
+  function adjustRole(role, changes) {
+    if (!changes) return;
+    if (changes.leadership) role.leadership = clamp(role.leadership + changes.leadership, 0, 10);
+    if (changes.welfare) role.welfare = clamp(role.welfare + changes.welfare, 0, 10);
+    if (changes.credibility) role.credibility = clamp(role.credibility + changes.credibility, 0, 8);
+    if (changes.wiggle) role.wiggle = clamp(role.wiggle + changes.wiggle, 0, 4);
+    if (role.leadership <= 0) role.eliminated = true;
+  }
+
+  function registerClaim(game, role, claim, backed) {
+    if (!claim) return;
+    const truth = role.stakes[claim.issue] || TEMP.NEGOTIABLE;
+    const record = {
+      round: game.round,
+      issue: claim.issue,
+      tier: claim.tier,
+      expires: game.round + 2,
+      backed: Boolean(backed),
+      resolved: false,
+      bluff: claim.tier > truth,
+    };
+    role.claims.push(record);
+    role.publicPosture = { issue: claim.issue, tier: claim.tier, expires: record.expires };
+    if (record.bluff) {
+      role.bluffFatigue = clamp(role.bluffFatigue + 1, 0, 6);
+      if (role.bluffFatigue >= 3) {
+        adjustRole(role, { credibility: -1 });
+        publicLog(game, 'warning', `${role.name}'s latest overclaim lands in a market already saturated with prior bluffs.`);
+      }
+    }
+  }
+
+  function backClaims(role, issue) {
+    if (!issue) return;
+    role.claims.forEach((claim) => {
+      if (!claim.resolved && claim.issue === issue) claim.backed = true;
+    });
+  }
+
+  function resolveClaimExpiry(game) {
+    ROLE_ORDER.forEach((roleId) => {
+      const role = game.roles[roleId];
+      role.claims.forEach((claim) => {
+        if (!claim.resolved && game.round >= claim.expires) {
+          claim.resolved = true;
+          if (!claim.backed) {
+            adjustRole(role, { credibility: -1 });
+            role.bluffFatigue = clamp(role.bluffFatigue + 1, 0, 6);
+            publicLog(game, 'warning', `${role.name}'s ${TEMP_NAME[claim.tier].toLowerCase()} claim on ${ISSUE_NAME[claim.issue]} expires unbacked; opponents mark it hollow.`);
+          }
+        }
+      });
+      const activeClaim = role.claims.slice().reverse().find((claim) => !claim.resolved);
+      role.publicPosture = activeClaim
+        ? { issue: activeClaim.issue, tier: activeClaim.tier, expires: activeClaim.expires }
+        : null;
+    });
+  }
+
+  function concessionAudienceCost(game, roleId, issue, protectedByFace) {
+    const role = game.roles[roleId];
+    const trapped = role.claims.some((claim) => !claim.resolved && claim.issue === issue && claim.tier === TEMP.EXISTENTIAL);
+    if (!trapped) return 0;
+    if (protectedByFace) return 0;
+    const cost = role.regimeType === 'authoritarian' ? 1 : 2;
+    adjustRole(role, { leadership: -cost, wiggle: -1 });
+    if (role.regimeType === 'authoritarian') role.pressures.survival = clamp(role.pressures.survival + 1, 0, 3);
+    publicLog(game, 'warning', `${role.name} pays ${cost} leadership capital for retreating across its own existential rhetoric.`);
+    return cost;
+  }
+
+  function climb(game, steps, reason) {
+    let moved = 0;
+    for (let i = 0; i < steps; i += 1) {
+      if (game.ladder.rung >= MAX_RUNG) break;
+      const previous = game.ladder.rung;
+      game.ladder.rung += 1;
+      if (game.ladder.rung > LOCK_THRESHOLD && !game.ladder.locked.includes(previous)) game.ladder.locked.push(previous);
+      moved += 1;
+    }
+    if (moved) publicLog(game, 'escalation', `Escalation pressure moves the ladder +${moved} to ${game.ladder.rung}: ${LADDER_NAMES[game.ladder.rung]}. ${reason || ''}`.trim());
+    return moved;
+  }
+
+  function descend(game, steps, faceCapacity, reason) {
+    let moved = 0;
+    let face = faceCapacity || 0;
+    for (let i = 0; i < steps; i += 1) {
+      if (game.ladder.rung <= 0) break;
+      const target = game.ladder.rung - 1;
+      const lockIndex = game.ladder.locked.indexOf(target);
+      if (lockIndex >= 0) {
+        if (face <= 0) {
+          publicLog(game, 'warning', `The attempted descent stalls at welded rung ${target} (${LADDER_NAMES[target]}): no face-saving mechanism is available.`);
+          break;
+        }
+        face -= 1;
+        game.ladder.locked.splice(lockIndex, 1);
+        publicLog(game, 'deal', `A face-saving mechanism reopens welded rung ${target}.`);
+      }
+      game.ladder.rung = target;
+      moved += 1;
+    }
+    if (moved) publicLog(game, 'deescalation', `The ladder moves −${moved} to ${game.ladder.rung}: ${LADDER_NAMES[game.ladder.rung]}. ${reason || ''}`.trim());
+    return { moved, faceRemaining: face };
+  }
+
+  function hottestStake(role) {
+    let bestIssue = null;
+    let bestTier = 0;
+    Object.entries(role.stakes).forEach(([issue, tier]) => {
+      if (tier > bestTier) {
+        bestIssue = issue;
+        bestTier = tier;
+      }
+    });
+    return { issue: bestIssue, tier: bestTier };
+  }
+
+  function probeStake(game, actorId, targetId, sourceLabel) {
+    const target = game.roles[targetId];
+    const hot = hottestStake(target);
+    const exactChance = target.bluffFatigue >= 3 ? 0.95 : 0.78;
+    let tier = hot.tier;
+    let noisy = false;
+    if (random(game) > exactChance) {
+      noisy = true;
+      tier = clamp(tier + (random(game) < 0.5 ? -1 : 1), TEMP.NEGOTIABLE, TEMP.EXISTENTIAL);
+    }
+    privateLog(game, actorId, `${sourceLabel}: ${target.name}'s behaviour centres on ${ISSUE_NAME[hot.issue]}, reading ${TEMP_NAME[tier]}${noisy ? ' with residual ambiguity' : ' with high confidence'}.`, targetId);
+    privateLog(game, targetId, `${actorId} appears to have probed your internal priorities.`, actorId);
+  }
+
+  function addSecretDeal(game, deal) {
+    const stored = {
+      id: `D${game.secretDeals.length + 1}`,
+      round: game.round,
+      parties: [...deal.parties],
+      title: deal.title,
+      text: deal.text,
+      issueCosts: deal.issueCosts || [],
+      protected: Boolean(deal.protected),
+      risk: deal.risk == null ? 2 : deal.risk,
+      leaked: false,
+      active: true,
+    };
+    game.secretDeals.push(stored);
+    stored.parties.forEach((partyId) => privateLog(game, partyId, `SECRET DEAL — ${stored.title}: ${stored.text}`, 'BACKCHANNEL'));
+    return stored;
+  }
+
+  function resolveLeaks(game) {
+    game.secretDeals.forEach((deal) => {
+      if (deal.leaked || !deal.active || deal.round >= game.round) return;
+      const base = 0.04 + game.media * 0.025 + deal.risk * 0.035 - (deal.protected ? 0.09 : 0);
+      const probability = clamp(base, 0.03, 0.5);
+      if (random(game) < probability) {
+        deal.leaked = true;
+        game.media = clamp(game.media + 1, 0, 8);
+        publicLog(game, 'leak', `LEAK: ${deal.title} becomes public — ${deal.text}`);
+        deal.parties.forEach((partyId) => {
+          const role = game.roles[partyId];
+          const leadershipLoss = role.regimeType === 'authoritarian' ? 1 : 2;
+          adjustRole(role, { leadership: -leadershipLoss, credibility: -1, wiggle: -1 });
+          if (role.regimeType === 'authoritarian') role.pressures.survival = clamp(role.pressures.survival + 1, 0, 3);
+          else role.pressures.hawk = clamp(role.pressures.hawk + 1, 0, 3);
+        });
+      }
+    });
+  }
+
+  function applyPublicAction(game, roleId, action, context) {
+    const role = game.roles[roleId];
+    spendAsset(role, action.assetCost);
+    restoreAsset(role, action.assetRestore);
+    role.visibleAction = action.label;
+    registerClaim(game, role, action.claim, Boolean(action.backsIssue));
+    backClaims(role, action.backsIssue);
+    adjustRole(role, {
+      leadership: action.leadership || 0,
+      welfare: action.selfWelfare || 0,
+      credibility: action.credibility || 0,
+      wiggle: action.wiggle || 0,
+    });
+    if (action.welfare) {
+      Object.entries(action.welfare).forEach(([targetId, delta]) => adjustRole(game.roles[targetId], { welfare: delta }));
+    }
+    context.escalationPressure += action.escalation || 0;
+    context.deescalationPressure += action.deescalation || 0;
+    context.mediaDelta += action.media || 0;
+    context.entanglementDelta += action.entanglement || 0;
+    if (action.alignment === 'hawk' && (action.escalation || 0) > 0) context.hardActions += 1;
+    (action.flags || []).forEach((flag) => {
+      context.flags[flag] = true;
+      if (flag === 'acceptsInquiry') context.acceptsInquiry.add(roleId);
+    });
+    if (action.commitment) game.commitments.push({ round: game.round, public: true, parties: [roleId], text: action.commitment });
+    publicLog(game, 'action', action.publicText);
+  }
+
+  function deliverPrivateSignal(game, actorId, action, targetId) {
+    const actor = game.roles[actorId];
+    actor.privateHistory.push({ round: game.round, action: action.id, target: targetId || null });
+    privateLog(game, actorId, `You selected: ${action.privateText}`, actorId);
+    if (targetId && game.roles[targetId]) privateLog(game, targetId, action.privateText, actorId);
+  }
+
+  function applyPrivateAction(game, roleId, action, plan, context) {
+    const role = game.roles[roleId];
+    spendAsset(role, action.assetCost);
+    const targetId = plan.target || (action.targets && action.targets.length === 1 ? action.targets[0] : null);
+    deliverPrivateSignal(game, roleId, action, targetId);
+    context.privateTypes[roleId] = action.type;
+    context.privateTargets[roleId] = targetId;
+
+    switch (action.type) {
+      case 'stageIncident': {
+        context.hiddenEscalation += 2;
+        const deniability = role.assets.DENIABILITY.clock;
+        const exposureChance = clamp(0.18 + (3 - deniability) * 0.2 + game.media * 0.025, 0.18, 0.85);
+        if (random(game) < exposureChance) {
+          context.mediaDelta += 2;
+          adjustRole(role, { credibility: -1 });
+          publicLog(game, 'leak', 'Evidence emerges that the new border incident was orchestrated by Belarusian security personnel.');
+        } else {
+          publicLog(game, 'incident', 'A fresh border incident occurs; attribution remains contested.');
+        }
+        break;
+      }
+      case 'restrainProxy':
+        context.directDescents += 1;
+        adjustRole(role, { leadership: -1 });
+        privateLog(game, 'BELARUS', 'Moscow has privately ordered an immediate halt to further incidents.', 'RUSSIA');
+        break;
+      case 'covertSupport':
+        context.hiddenEscalation += 1;
+        context.entanglementDelta += 1;
+        adjustRole(game.roles.BELARUS, { welfare: 1 });
+        break;
+      case 'probe':
+        if (targetId) probeStake(game, roleId, targetId, action.id === 'U_INTELLIGENCE_PROBE' ? 'Intelligence assessment' : 'Field assessment');
+        break;
+      case 'quietReassurance':
+        adjustRole(game.roles.EU, { credibility: 1 });
+        break;
+      case 'prepareReinforcement':
+        role.flags.preparedReinforcement = true;
+        break;
+      case 'marketOfframp':
+        context.marketOfframp = { actorId: roleId, targetId };
+        break;
+      case 'whipCoalition':
+        restoreAsset(role, { id: 'SANCTIONS_UNITY', amount: 1 });
+        adjustRole(role, { leadership: -1 });
+        break;
+      case 'quietRoom':
+        if (targetId) probeStake(game, roleId, targetId, 'Quiet-room read');
+        break;
+      case 'inspection':
+        context.inspectionReady = true;
+        break;
+      case 'escrow':
+        context.escrowReady = true;
+        context.faceCapacity += 1;
+        break;
+      case 'secretAnnex':
+        context.secretAnnexReady = true;
+        context.faceCapacity += 1;
+        break;
+      default:
+        break;
+    }
+  }
+
+  function matchBackchannels(game, context) {
+    const types = context.privateTypes;
+    const protectedByUN = context.escrowReady || context.secretAnnexReady;
+
+    if (types.BELARUS === 'seekGuarantee' && types.RUSSIA === 'conditionalGuarantee') {
+      context.directDescents += 1;
+      context.entanglementDelta += 1;
+      game.flags.durableSettlement = true;
+      const deal = addSecretDeal(game, {
+        parties: ['BELARUS', 'RUSSIA'],
+        title: 'Patrol withdrawal for regime assurance',
+        text: 'Belarus will withdraw the disputed patrol; Russia guarantees regime security but not the border claim.',
+        issueCosts: [{ roleId: 'BELARUS', issue: ISSUE.BORDER }],
+        protected: protectedByUN,
+        risk: protectedByUN ? 1 : 3,
+      });
+      concessionAudienceCost(game, 'BELARUS', ISSUE.BORDER, deal.protected);
+      adjustRole(game.roles.BELARUS, { wiggle: 1, credibility: 1 });
+      adjustRole(game.roles.RUSSIA, { wiggle: -1 });
+      context.deals.push(deal.title);
+    }
+
+    if (types.RUSSIA === 'demobilize' && types.US === 'nondeployment') {
+      context.directDescents += 1;
+      game.flags.durableSettlement = true;
+      const deal = addSecretDeal(game, {
+        parties: ['RUSSIA', 'US'],
+        title: 'Demobilisation / non-deployment understanding',
+        text: 'Russia reverses exercises; the United States gives a private assurance against permanent new deployment.',
+        issueCosts: [{ roleId: 'US', issue: ISSUE.GUARANTEE }, { roleId: 'RUSSIA', issue: ISSUE.BORDER }],
+        protected: protectedByUN,
+        risk: protectedByUN ? 1 : 3,
+      });
+      concessionAudienceCost(game, 'US', ISSUE.GUARANTEE, deal.protected);
+      concessionAudienceCost(game, 'RUSSIA', ISSUE.BORDER, deal.protected);
+      adjustRole(game.roles.US, { wiggle: -1 });
+      adjustRole(game.roles.RUSSIA, { credibility: 1 });
+      context.deals.push(deal.title);
+    }
+
+    const inquiryAccepted = context.flags.inquiryOpen && (
+      context.acceptsInquiry.has('BELARUS') || context.acceptsInquiry.has('RUSSIA') ||
+      types.BELARUS === 'quietWithdrawal' || context.inspectionReady
+    );
+    if (inquiryAccepted) {
+      context.directDescents += 1;
+      context.faceCapacity += 1;
+      game.flags.inquiryOpen = true;
+      game.flags.durableSettlement = true;
+      game.commitments.push({ round: game.round, public: true, parties: ['UN', 'BELARUS', 'RUSSIA'], text: 'Joint inquiry and monitored access established.' });
+      publicLog(game, 'deal', 'A joint inquiry is accepted, giving each side public cover for reversible steps.');
+      context.deals.push('Joint inquiry and monitored access');
+      context.publicDeals.push('Joint inquiry and monitored access');
+    }
+
+    if (types.EU === 'delaySanctions' && inquiryAccepted) {
+      game.flags.sanctionsPrepared = true;
+      context.preventSanctionsDecay = true;
+      privateLog(game, 'RUSSIA', 'The EU will delay sanctions while the inquiry remains active.', 'EU');
+      privateLog(game, 'EU', 'The conditional sanctions delay is accepted into the inquiry package.', 'RUSSIA');
+      context.deals.push('Conditional EU sanctions delay');
+    }
+
+    if (context.marketOfframp && context.directDescents > 0) {
+      const target = game.roles[context.marketOfframp.targetId];
+      if (target) {
+        adjustRole(target, { welfare: 1 });
+        privateLog(game, target.id, 'The EU activates limited market relief after a verified de-escalatory step.', 'EU');
+        context.deals.push('Market off-ramp');
+      }
+    }
+
+    if (context.secretAnnexReady && context.deals.length) {
+      game.secretDeals.forEach((deal) => {
+        if (deal.round === game.round) deal.protected = true;
+      });
+      privateLog(game, 'UN', 'The secret annex is attached to the round’s reciprocal package.', 'SYSTEM');
+    }
+  }
+
+  function applyFactionDynamics(game, roleId, plan, publicAction, context) {
+    const role = game.roles[roleId];
+    const chosen = plan.faction;
+    role.pressures[chosen] = clamp(role.pressures[chosen] - 1, 0, 3);
+    if (publicAction.alignment === chosen) role.pressures[chosen] = clamp(role.pressures[chosen] - 1, 0, 3);
+
+    const sufferedLoss = context.roundWelfareStart[roleId] > role.welfare;
+    const bluffThisRound = role.claims.some((claim) => claim.round === game.round && claim.bluff);
+    const triggers = {
+      hawk: game.ladder.rung >= 4 || sufferedLoss || context.escalationPressure > 0,
+      statesman: game.ladder.rung >= 4 || game.media >= 4 || role.wiggle <= 1,
+      survival: role.leadership <= 4 || game.media >= 5 || bluffThisRound,
+    };
+    ['hawk', 'statesman', 'survival'].forEach((faction) => {
+      if (faction !== chosen && triggers[faction]) role.pressures[faction] = clamp(role.pressures[faction] + 1, 0, 3);
+    });
+
+    ['hawk', 'statesman', 'survival'].forEach((faction) => {
+      if (role.pressures[faction] < 3) return;
+      role.pressures[faction] = 1;
+      let text = '';
+      if (faction === 'hawk') {
+        context.mediaDelta += 1;
+        adjustRole(role, { credibility: -1 });
+        if (['BELARUS', 'RUSSIA', 'US'].includes(roleId) && publicAction.alignment !== 'hawk') context.factionEscalation += 1;
+        text = `${ROLE_DEFS[roleId].factions.hawk.name} leak a harder line and demand proof of resolve.`;
+      } else if (faction === 'statesman') {
+        adjustRole(role, { wiggle: -1, credibility: -1 });
+        text = `${ROLE_DEFS[roleId].factions.statesman.name} lose influence; one diplomatic option closes.`;
+      } else {
+        adjustRole(role, { leadership: -2 });
+        text = role.regimeType === 'authoritarian'
+          ? `${ROLE_DEFS[roleId].factions.survival.name} begin an elite challenge to the leadership.`
+          : `${ROLE_DEFS[roleId].factions.survival.name} threaten to withdraw the mandate keeping the leadership in office.`;
+      }
+      role.factionEvents.push({ round: game.round, faction, text });
+      privateLog(game, roleId, `ROOM EVENT — ${text}`, 'INTERNAL');
+      publicLog(game, 'room', `${role.name}: visible internal dissent narrows the government’s freedom of action.`);
+    });
+  }
+
+  function decayAssets(game, context) {
+    const belarus = game.roles.BELARUS;
+    const russia = game.roles.RUSSIA;
+    const eu = game.roles.EU;
+
+    if (game.round >= 2 && belarus.assets.DENIABILITY.clock > 0) {
+      belarus.assets.DENIABILITY.clock -= 1;
+      privateLog(game, 'BELARUS', 'Independent evidence and satellite imagery erode incident deniability by one clock.', 'CLOCK');
+    }
+    if (game.round >= 3 && russia.assets.MOBILIZATION.clock > 0) {
+      russia.assets.MOBILIZATION.clock -= 1;
+      privateLog(game, 'RUSSIA', 'The local mobilisation lead decays as opposing logistics catch up.', 'CLOCK');
+    }
+    if (game.flags.sanctionsPrepared && !game.flags.sanctionsActive && !context.preventSanctionsDecay && eu.assets.SANCTIONS_UNITY.clock > 0) {
+      eu.assets.SANCTIONS_UNITY.clock -= 1;
+      privateLog(game, 'EU', 'Member-state patience erodes: sanctions unity loses one clock.', 'CLOCK');
+    }
+    if (game.media >= 6 && game.roles.UN.assets.QUIET_ROOM.clock > 0) {
+      game.roles.UN.assets.QUIET_ROOM.clock -= 1;
+      privateLog(game, 'UN', 'Media saturation closes one protected backchannel.', 'CLOCK');
+    }
+  }
+
+  function applyCrisisDamage(game, context) {
+    if (game.ladder.rung < 5) return;
+    const damage = game.ladder.rung >= 8 ? 2 : 1;
+    ['BELARUS', 'RUSSIA', 'EU'].forEach((roleId) => adjustRole(game.roles[roleId], { welfare: -damage }));
+    if (game.ladder.rung >= 7) adjustRole(game.roles.US, { welfare: -1 });
+    game.worldWelfare = clamp(game.worldWelfare - damage, 0, 10);
+    game.casualties += damage;
+    publicLog(game, 'damage', `Crisis exposure at rung ${game.ladder.rung} costs regional welfare and produces ${damage} casualty pressure.`);
+  }
+
+  function resolveRound(game) {
+    if (game.over) return { ok: false, reason: 'The game is over.' };
+    if (!allPlansSubmitted(game)) return { ok: false, reason: 'Every active role must submit a plan.' };
+
+    const context = {
+      escalationPressure: 0,
+      hiddenEscalation: 0,
+      factionEscalation: 0,
+      deescalationPressure: 0,
+      directDescents: 0,
+      mediaDelta: 0,
+      entanglementDelta: 0,
+      hardActions: 0,
+      flags: {},
+      acceptsInquiry: new Set(),
+      privateTypes: {},
+      privateTargets: {},
+      escrowReady: false,
+      secretAnnexReady: false,
+      inspectionReady: false,
+      faceCapacity: 0,
+      marketOfframp: null,
+      preventSanctionsDecay: false,
+      deals: [],
+      publicDeals: [],
+      roundWelfareStart: {},
+    };
+    ROLE_ORDER.forEach((roleId) => { context.roundWelfareStart[roleId] = game.roles[roleId].welfare; });
+
+    const roundSnapshot = {
+      round: game.round,
+      start: {
+        rung: game.ladder.rung,
+        media: game.media,
+        entanglement: game.entanglement,
+      },
+      plans: deepClone(game.plans),
+    };
+
+    ROLE_ORDER.forEach((roleId) => {
+      const plan = game.plans[roleId];
+      if (!plan || game.roles[roleId].eliminated) return;
+      const action = getAction('public', roleId, plan.publicAction);
+      applyPublicAction(game, roleId, action, context);
+    });
+
+    ROLE_ORDER.forEach((roleId) => {
+      const plan = game.plans[roleId];
+      if (!plan || game.roles[roleId].eliminated) return;
+      const action = getAction('private', roleId, plan.privateAction);
+      applyPrivateAction(game, roleId, action, plan, context);
+    });
+
+    matchBackchannels(game, context);
+
+    game.flags.sanctionsPrepared = game.flags.sanctionsPrepared || Boolean(context.flags.sanctionsPrepared);
+    game.flags.sanctionsActive = game.flags.sanctionsActive || Boolean(context.flags.sanctionsActive);
+    game.flags.inquiryOpen = game.flags.inquiryOpen || Boolean(context.flags.inquiryOpen);
+    game.flags.acceptsInquiry = Array.from(new Set([...(game.flags.acceptsInquiry || []), ...context.acceptsInquiry]));
+
+    const preFactionMediaDelta = context.mediaDelta;
+    game.media = clamp(game.media + preFactionMediaDelta, 0, 8);
+    game.entanglement = clamp(game.entanglement + context.entanglementDelta, 0, 5);
+
+    const totalEscalation = context.escalationPressure + context.hiddenEscalation;
+    let upSteps = totalEscalation >= 6 ? 2 : totalEscalation >= 1 ? 1 : 0;
+    upSteps = clamp(upSteps, 0, 3);
+    climb(game, upSteps, `${context.hardActions} visible hard-line action${context.hardActions === 1 ? '' : 's'} and ${context.hiddenEscalation} hidden pressure.`);
+
+    let downSteps = context.directDescents;
+    if (context.deescalationPressure >= 3) downSteps += 1;
+    if (context.flags.humanitarianPause && context.hardActions <= 1) downSteps += 1;
+    if (context.flags.humanitarianPause && context.hardActions > 1) publicLog(game, 'warning', 'The humanitarian pause fails: simultaneous hard-line actions leave no reversible interval.');
+    downSteps = clamp(downSteps, 0, 2);
+    const descentReason = context.publicDeals.length
+      ? `Public package: ${context.publicDeals.join('; ')}.`
+      : context.deals.length
+        ? 'Private reciprocal steps are recorded; terms remain classified.'
+        : 'Coordinated restraint.';
+    descend(game, downSteps, context.faceCapacity, descentReason);
+
+    resolveClaimExpiry(game);
+
+    ROLE_ORDER.forEach((roleId) => {
+      const plan = game.plans[roleId];
+      if (!plan || game.roles[roleId].eliminated) return;
+      const pub = getAction('public', roleId, plan.publicAction);
+      applyFactionDynamics(game, roleId, plan, pub, context);
+    });
+
+    if (context.factionEscalation > 0) {
+      climb(game, Math.min(1, context.factionEscalation), 'An internal hard-line faction acts after the formal decision window.');
+    }
+
+    const factionMediaDelta = context.mediaDelta - preFactionMediaDelta;
+    game.media = clamp(game.media + factionMediaDelta, 0, 8);
+
+    decayAssets(game, context);
+    resolveLeaks(game);
+    applyCrisisDamage(game, context);
+
+    if (game.media >= 7) {
+      ROLE_ORDER.forEach((roleId) => {
+        const role = game.roles[roleId];
+        const loss = role.regimeType === 'authoritarian' ? 0 : 1;
+        if (loss) adjustRole(role, { leadership: -loss });
+      });
+      publicLog(game, 'media', 'Media heat reaches saturation; democratic and institutional leaders lose room to manoeuvre.');
+    }
+
+    roundSnapshot.end = {
+      rung: game.ladder.rung,
+      media: game.media,
+      entanglement: game.entanglement,
+      deals: [...context.deals],
+    };
+    game.roundHistory.push(roundSnapshot);
+    game.plans = {};
+
+    const ended = checkEnd(game);
+    if (!ended) game.round += 1;
+    return { ok: true, context, ended, snapshot: roundSnapshot };
+  }
+
+  function checkEnd(game) {
+    if (game.over) return true;
+    if (game.ladder.rung >= MAX_RUNG) {
+      game.over = true;
+      game.endReason = 'The ladder reaches nuclear use.';
+    } else if (game.roles.BELARUS.eliminated) {
+      game.over = true;
+      game.endReason = 'The Belarusian leadership collapses under the crisis.';
+    } else if (game.roles.RUSSIA.eliminated || game.roles.US.eliminated) {
+      game.over = true;
+      game.endReason = 'A major-power leadership loses control of the crisis.';
+    } else if (game.ladder.rung <= 1 && game.flags.durableSettlement) {
+      game.over = true;
+      game.endReason = 'A durable settlement contains the crisis.';
+    } else if (game.round >= game.maxRounds) {
+      game.over = true;
+      game.endReason = 'The six-round crisis window closes.';
+    }
+    if (game.over) game.phase = 'debrief';
+    return game.over;
+  }
+
+  function interestScore(game, roleId) {
+    const role = game.roles[roleId];
+    let score = 0;
+    if (roleId === 'BELARUS') {
+      if (!role.eliminated) score += 4;
+      if (game.secretDeals.some((deal) => deal.title.includes('Patrol withdrawal') && deal.active)) score += 3;
+      if (game.entanglement >= 3) score += 2;
+      if (game.ladder.rung < 7) score += 1;
+    } else if (roleId === 'RUSSIA') {
+      if (!role.eliminated) score += 3;
+      if (!game.roles.BELARUS.eliminated && game.entanglement >= 2) score += 2;
+      if (game.secretDeals.some((deal) => deal.title.includes('Demobilisation'))) score += 3;
+      if (game.ladder.rung < 8) score += 2;
+    } else if (roleId === 'US') {
+      if (role.credibility >= 4) score += 3;
+      if (game.ladder.rung < 8) score += 4;
+      if (game.secretDeals.some((deal) => deal.title.includes('Demobilisation'))) score += 2;
+      if (game.roles.EU.leadership > 0) score += 1;
+    } else if (roleId === 'EU') {
+      if (role.leadership > 0) score += 3;
+      if (role.assets.SANCTIONS_UNITY.clock >= 1) score += 2;
+      if (game.ladder.rung < 7) score += 3;
+      if (game.flags.inquiryOpen) score += 2;
+    } else if (roleId === 'UN') {
+      const initialRung = 3;
+      score += clamp(4 + (initialRung - game.ladder.rung), 0, 6);
+      if (game.flags.inquiryOpen) score += 2;
+      if (game.flags.durableSettlement) score += 2;
+      score -= game.secretDeals.filter((deal) => deal.leaked).length;
+    }
+    return clamp(score, 0, 10);
+  }
+
+  function scoreGame(game) {
+    const roles = {};
+    ROLE_ORDER.forEach((roleId) => {
+      const role = game.roles[roleId];
+      const remainingAssets = Object.values(role.assets).reduce((sum, asset) => sum + asset.clock, 0);
+      const assetMax = Object.values(role.assets).reduce((sum, asset) => sum + asset.max, 0);
+      const futureLeverage = Math.round(((role.credibility / 8) * 4 + (role.wiggle / 4) * 3 + (remainingAssets / assetMax) * 3) * 10) / 10;
+      roles[roleId] = {
+        interests: interestScore(game, roleId),
+        leadership: role.leadership,
+        welfare: role.welfare,
+        futureLeverage,
+        survived: !role.eliminated,
+        bluffFatigue: role.bluffFatigue,
+      };
+    });
+    const worldViability = clamp(Math.round(100 - game.ladder.rung * 7 - game.media * 3 - game.casualties * 4 + (game.flags.durableSettlement ? 10 : 0)), 0, 100);
+    return { roles, worldViability, endReason: game.endReason || 'Crisis still active.' };
+  }
+
+  function publicStatus(role) {
+    if (role.eliminated || role.leadership <= 0) return 'collapsed';
+    if (role.leadership <= 3) return 'critical';
+    if (role.leadership <= 5) return 'strained';
+    return 'stable';
+  }
+
+  function autoPlan(game, roleId) {
+    const role = game.roles[roleId];
+    const ladder = game.ladder.rung;
+    const media = game.media;
+    const choose = (faction, publicAction, privateAction, target) => ({ faction, publicAction, privateAction, target: target || null });
+
+    if (roleId === 'BELARUS') {
+      if (ladder >= 6 || role.wiggle <= 1) return choose('statesman', 'B_ACCEPT_INQUIRY', 'B_SEEK_GUARANTEE', 'RUSSIA');
+      if (game.entanglement < 3) return choose('hawk', 'B_BORDER_RED_LINE', 'B_SEEK_GUARANTEE', 'RUSSIA');
+      if (role.assets.DENIABILITY.clock > 0 && random(game) < 0.45) return choose('hawk', 'B_RENEW_PATROL', 'B_STAGE_INCIDENT');
+      return choose('survival', 'B_STRATEGIC_AMBIGUITY', 'B_REQUEST_ESCROW', 'UN');
+    }
+    if (roleId === 'RUSSIA') {
+      if (ladder >= 6) return choose('statesman', 'R_SIGNAL_RESTRAINT', 'R_DEMOBILIZE_FOR_NONDEPLOYMENT', 'US');
+      if (game.entanglement < 3) return choose('survival', 'R_PUBLIC_GUARANTEE', 'R_CONDITIONAL_GUARANTEE', 'BELARUS');
+      if (game.roles.BELARUS.assets.DENIABILITY.clock <= 1) return choose('statesman', 'R_CALL_INVESTIGATION', 'R_RESTRAIN_PROXY', 'BELARUS');
+      return choose('hawk', 'R_DEFENSIVE_EXERCISES', 'R_COVERT_SUPPORT', 'BELARUS');
+    }
+    if (roleId === 'US') {
+      if (ladder >= 6) return choose('statesman', 'U_SUPPORT_INQUIRY', 'U_NO_PERMANENT_DEPLOYMENT', 'RUSSIA');
+      if (game.roles.RUSSIA.assets.MOBILIZATION.clock >= 2) return choose('survival', 'U_REASSURE_ALLIES', 'U_NO_PERMANENT_DEPLOYMENT', 'RUSSIA');
+      if (role.assets.INTELLIGENCE.clock > 0 && random(game) < 0.35) return choose('statesman', 'U_SANCTIONS_WARNING', 'U_INTELLIGENCE_PROBE', 'RUSSIA');
+      return choose('hawk', 'U_REINFORCE', 'U_PREPARE_REINFORCEMENT');
+    }
+    if (roleId === 'EU') {
+      if (game.flags.inquiryOpen || ladder >= 6) return choose('statesman', 'E_SUPPORT_INQUIRY', 'E_DELAY_SANCTIONS', 'RUSSIA');
+      if (role.assets.SANCTIONS_UNITY.clock <= 1) return choose('survival', 'E_EMERGENCY_COUNCIL', 'E_WHIP_COALITION');
+      return choose('survival', 'E_PREPARE_SANCTIONS', 'E_DELAY_SANCTIONS', 'RUSSIA');
+    }
+    if (roleId === 'UN') {
+      if (ladder >= 7) return choose('statesman', 'N_HUMANITARIAN_PAUSE', 'N_ESCROW_PACKAGE');
+      if (!game.flags.inquiryOpen) return choose('statesman', 'N_JOINT_INQUIRY', 'N_ESCROW_PACKAGE');
+      if (media >= 5) return choose('survival', 'N_PUBLIC_APPEAL', 'N_SECRET_ANNEX');
+      return choose('statesman', 'N_JOINT_INQUIRY', 'N_INSPECTION_MISSION', 'BELARUS');
+    }
+    return choose('statesman', PUBLIC_ACTIONS[roleId][0].id, PRIVATE_ACTIONS[roleId][0].id, null);
+  }
+
+  function submitAIPlans(game) {
+    ROLE_ORDER.forEach((roleId) => {
+      const role = game.roles[roleId];
+      if (!role.human && !role.eliminated && !game.plans[roleId]) {
+        const plan = autoPlan(game, roleId);
+        const checked = validatePlan(game, roleId, plan);
+        if (checked.ok) game.plans[roleId] = plan;
+        else {
+          const pub = getPublicActions(game, roleId).find((action) => action.available);
+          const priv = getPrivateActions(game, roleId).find((action) => action.available);
+          const target = priv && priv.targets && priv.targets.length ? priv.targets[0] : null;
+          game.plans[roleId] = { faction: 'survival', publicAction: pub.id, privateAction: priv.id, target };
+        }
+      }
+    });
+  }
+
+  function submitGuidedPlans(game) {
+    ROLE_ORDER.forEach((roleId) => {
+      game.plans[roleId] = deepClone(GUIDED_PLANS[roleId]);
+    });
+    return game.plans;
+  }
+
+  function getGuidedNarrative(result) {
+    const snapshot = result && result.snapshot;
+    if (!snapshot) return [];
+    return [
+      {
+        title: '1 · The catalytic move',
+        text: 'Belarus publicly calls a negotiable crossing existential while privately asking for the thing it really needs: a Russian regime-security guarantee.',
+      },
+      {
+        title: '2 · Patron entrapment begins',
+        text: 'Russia shows readiness but makes support conditional. The proxy is protected only if it withdraws the patrol—support has been converted into a bargain rather than a blank cheque.',
+      },
+      {
+        title: '3 · Reassurance without automatic war',
+        text: 'The United States reassures allies publicly while offering Russia a private no-permanent-deployment assurance. Russia used its one private action elsewhere, so the feeler remains unmatched—an important signal rather than a completed deal.',
+      },
+      {
+        title: '4 · Economic pressure gains an off-ramp',
+        text: 'The EU prepares sanctions, then privately offers a delay if an inquiry is accepted. Because no principal has yet accepted the inquiry publicly, the off-ramp remains conditional rather than automatic.',
+      },
+      {
+        title: '5 · The UN supplies settlement technology',
+        text: 'The UN prepares escrow. It can protect the matching Belarus–Russia exchange, but it cannot manufacture consent where private intentions do not match.',
+      },
+      {
+        title: '6 · The ratchet moves—but does not reset',
+        text: `The round starts at rung ${snapshot.start.rung}, rises under visible hard-line action, then returns to rung ${snapshot.end.rung}. Entanglement ends at ${snapshot.end.entanglement}; public claims and secret annexes remain as structural residue.`,
+      },
+    ];
+  }
+
+  function exportReplay(game) {
+    return JSON.stringify({
+      version: game.version,
+      scenario: game.scenario,
+      seed: game.seed,
+      roundHistory: game.roundHistory,
+      final: {
+        rung: game.ladder.rung,
+        media: game.media,
+        entanglement: game.entanglement,
+        score: scoreGame(game),
+      },
+    }, null, 2);
+  }
+
+  return Object.freeze({
+    VERSION,
+    TEMP,
+    TEMP_NAME,
+    ISSUE,
+    ISSUE_NAME,
+    LADDER_NAMES,
+    ROLE_ORDER,
+    ROLE_DEFS,
+    PUBLIC_ACTIONS,
+    PRIVATE_ACTIONS,
+    GUIDED_PLANS,
+    createGame,
+    getRoleDef,
+    getAction,
+    getPublicActions,
+    getPrivateActions,
+    validatePlan,
+    submitPlan,
+    allPlansSubmitted,
+    autoPlan,
+    submitAIPlans,
+    submitGuidedPlans,
+    resolveRound,
+    scoreGame,
+    publicStatus,
+    getGuidedNarrative,
+    exportReplay,
+    deepClone,
+  });
+});
+
+</script>
+  <script>
+(function () {
+  'use strict';
+
+  const E = window.SituationRoomEngine;
+  if (!E) throw new Error('SituationRoomEngine failed to load.');
+
+  const $ = (selector, root) => (root || document).querySelector(selector);
+  const $$ = (selector, root) => Array.from((root || document).querySelectorAll(selector));
+  const SAVE_KEY = 'situation-room-the-burr-v1';
+  const FEEDBACK_URL = 'https://github.com/EARTHTOEDWARD/situation-room/issues/new?template=playtest.yml&title=Playtest%20feedback%3A%20The%20Burr';
+
+  let game = null;
+  let setupHumans = new Set(E.ROLE_ORDER);
+  let planningQueue = [];
+  let queueIndex = 0;
+  let currentRoleId = null;
+  let draft = { faction: null, publicAction: null, privateAction: null, target: null };
+  let modalReturnFocus = null;
+  let timerHandle = null;
+  let timerSeconds = 120;
+  let tourSteps = [];
+  let tourIndex = 0;
+  let tourFocus = null;
+  let tourPreviousGame = null;
+  let tourPreviousHadGame = false;
+
+  function escapeHtml(value) {
+    return String(value == null ? '' : value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  function setScreen(which) {
+    $('#setupScreen').hidden = which !== 'setup';
+    $('#gameScreen').hidden = which !== 'game';
+  }
+
+  function saveGame() {
+    if (!game || game.guided) return;
+    try {
+      localStorage.setItem(SAVE_KEY, JSON.stringify(game));
+    } catch (error) {
+      console.warn('Could not save local game state.', error);
+    }
+  }
+
+  function loadSavedGame() {
+    try {
+      const raw = localStorage.getItem(SAVE_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (!parsed || parsed.version !== E.VERSION || parsed.scenario !== 'THE BURR') return null;
+      return parsed;
+    } catch (error) {
+      console.warn('Could not load local game state.', error);
+      return null;
+    }
+  }
+
+  function clearSavedGame() {
+    try { localStorage.removeItem(SAVE_KEY); } catch (_) { /* no-op */ }
+  }
+
+  function roleStyle(roleId) {
+    return `--role-accent:${E.ROLE_DEFS[roleId].accent}`;
+  }
+
+  function renderSetup() {
+    const root = $('#roleSetup');
+    root.innerHTML = '';
+    E.ROLE_ORDER.forEach((roleId) => {
+      const def = E.ROLE_DEFS[roleId];
+      const isHuman = setupHumans.has(roleId);
+      const card = document.createElement('article');
+      card.className = 'setup-role';
+      card.dataset.role = roleId;
+      card.setAttribute('style', roleStyle(roleId));
+      card.innerHTML = `
+        <div class="setup-role-top">
+          <div class="role-badge">${escapeHtml(def.short)}</div>
+          <h3>${escapeHtml(def.name)}</h3>
+        </div>
+        <p>${escapeHtml(def.brief)}</p>
+        <div class="seat-toggle" role="group" aria-label="${escapeHtml(def.name)} seat type">
+          <button type="button" data-seat="human" class="${isHuman ? 'active' : ''}">Human</button>
+          <button type="button" data-seat="ai" class="${!isHuman ? 'active' : ''}">AI</button>
+        </div>`;
+      card.querySelectorAll('[data-seat]').forEach((button) => {
+        button.addEventListener('click', () => {
+          if (button.dataset.seat === 'human') setupHumans.add(roleId);
+          else setupHumans.delete(roleId);
+          renderSetup();
+        });
+      });
+      root.appendChild(card);
+    });
+    $('#btnStart').textContent = setupHumans.size
+      ? `Open the table · ${setupHumans.size} human${setupHumans.size === 1 ? '' : 's'}`
+      : 'Open observer table · all AI';
+  }
+
+  function applyPreset(name) {
+    if (name === 'five') setupHumans = new Set(E.ROLE_ORDER);
+    else if (name === 'two') setupHumans = new Set(['BELARUS', 'RUSSIA']);
+    else setupHumans = new Set();
+    renderSetup();
+  }
+
+  function startGame() {
+    clearTimer();
+    const seed = ($('#seedInput').value || 'BURR-001').trim();
+    game = E.createGame({ humanRoles: Array.from(setupHumans), seed });
+    setScreen('game');
+    renderShared();
+    saveGame();
+    openModal('Table opened', `
+      <p><b>${setupHumans.size || 'No'} human seat${setupHumans.size === 1 ? '' : 's'}.</b> The remaining roles are controlled by deterministic scenario AI using replay seed <span class="mono">${escapeHtml(game.seed)}</span>.</p>
+      <div class="worked"><b>Round loop:</b> negotiate openly → pass the device through private rooms → seal one public and one private action per role → resolve simultaneously.</div>
+      <p>Do not show another player your private stakes, faction pressure, inbox, or selected actions. Off-device promises are political speech; only actions encoded in the app are mechanically binding.</p>
+      <div class="modal-actions"><button class="primary" id="modalBegin" type="button">Begin at the public board</button></div>`);
+    $('#modalBegin').addEventListener('click', closeModal);
+  }
+
+  function resumeGame(saved) {
+    game = saved;
+    setScreen('game');
+    renderShared();
+    closeModal();
+  }
+
+  function tempClass(tier) {
+    return `t${Number(tier) || 1}`;
+  }
+
+  function pips(clock, max) {
+    let html = '';
+    for (let i = 0; i < max; i += 1) html += `<i class="${i < clock ? 'on' : ''}"></i>`;
+    return html;
+  }
+
+  function renderLadder() {
+    const root = $('#ladder');
+    root.innerHTML = '';
+    E.LADDER_NAMES.forEach((name, index) => {
+      const rung = document.createElement('div');
+      const reached = index <= game.ladder.rung;
+      const current = index === game.ladder.rung;
+      const locked = game.ladder.locked.includes(index);
+      rung.className = `rung ${reached ? 'reached' : ''} ${current ? 'current' : ''} ${index >= 6 ? 'hot' : ''} ${locked ? 'locked' : ''}`;
+      rung.innerHTML = `<span class="num">${index}</span><span class="name">${escapeHtml(name)}</span>${locked ? '<span class="lock">WELDED</span>' : ''}`;
+      root.appendChild(rung);
+    });
+    $('#rungValue').textContent = game.ladder.rung;
+    $('#rungName').textContent = E.LADDER_NAMES[game.ladder.rung];
+  }
+
+  function renderPublicRoles() {
+    const root = $('#publicRoles');
+    root.innerHTML = '';
+    E.ROLE_ORDER.forEach((roleId) => {
+      const role = game.roles[roleId];
+      const def = E.ROLE_DEFS[roleId];
+      const status = E.publicStatus(role);
+      const posture = role.publicPosture;
+      const card = document.createElement('article');
+      card.className = 'public-role';
+      card.dataset.role = roleId;
+      card.setAttribute('style', roleStyle(roleId));
+      card.innerHTML = `
+        <div class="public-role-top">
+          <div class="role-badge">${escapeHtml(def.short)}</div>
+          <h3>${escapeHtml(def.name)}</h3>
+          <span class="seat">${role.human ? 'human' : 'AI'}</span>
+        </div>
+        <div class="stability ${status}"><i></i>${escapeHtml(status)}</div>
+        <div class="posture">
+          <div class="label">Current public posture</div>
+          ${posture ? `
+            <div class="issue">${escapeHtml(E.ISSUE_NAME[posture.issue])}</div>
+            <span class="tier ${tempClass(posture.tier)}">${escapeHtml(E.TEMP_NAME[posture.tier])} · expires R${posture.expires}</span>` : `
+            <div class="issue">No categorical claim</div>
+            <span class="tier">UNCOMMITTED</span>`}
+        </div>
+        <div class="public-stat"><span>Public credibility</span><b>${role.credibility} / 8</b></div>
+        <div class="visible-action"><b>Last visible action</b>${escapeHtml(role.visibleAction)}</div>`;
+      root.appendChild(card);
+    });
+  }
+
+  function renderStructure() {
+    $('#mediaValue').textContent = `${game.media} / 8`;
+    $('#mediaBar').style.width = `${(game.media / 8) * 100}%`;
+    $('#entanglementValue').textContent = `${game.entanglement} / 5`;
+    $('#entanglementBar').style.width = `${(game.entanglement / 5) * 100}%`;
+
+    const clocks = [
+      ['BELARUS', 'DENIABILITY'],
+      ['RUSSIA', 'MOBILIZATION'],
+      ['US', 'REINFORCEMENT'],
+      ['EU', 'SANCTIONS_UNITY'],
+      ['UN', 'QUIET_ROOM'],
+    ];
+    $('#publicClocks').innerHTML = clocks.map(([roleId, assetId]) => {
+      const asset = game.roles[roleId].assets[assetId];
+      const stateClass = asset.clock === 0 ? 'dead' : asset.clock === 1 ? 'expiring' : '';
+      return `<div class="clock-card ${stateClass}"><div class="name">${escapeHtml(game.roles[roleId].name)} · ${escapeHtml(asset.label)}</div><div class="clock-pips">${pips(asset.clock, asset.max)}</div></div>`;
+    }).join('');
+
+    const ledger = game.commitments.filter((item) => item.public);
+    $('#commitmentLedger').innerHTML = ledger.length
+      ? ledger.slice().reverse().map((item) => `<div class="ledger-item"><b>R${item.round}</b> · ${escapeHtml(item.text)}</div>`).join('')
+      : '<div class="ledger-item">No public commitments yet.</div>';
+  }
+
+  function renderLog() {
+    const root = $('#publicLog');
+    root.innerHTML = game.publicLog.map((item) => `
+      <div class="log-line ${escapeHtml(item.type)}">
+        <span class="round">${item.round ? `R${item.round}` : '···'}</span>
+        <span class="type">${escapeHtml(item.type)}</span>
+        <span>${escapeHtml(item.text)}</span>
+      </div>`).join('');
+    root.scrollTop = root.scrollHeight;
+  }
+
+  function renderRoundConsole() {
+    if (game.over) {
+      $('#roundHeadline').textContent = 'Crisis concluded';
+      $('#roundInstruction').textContent = game.endReason || 'Open the debrief to reveal hidden stakes and private commitments.';
+      $('#btnPlan').textContent = 'Open debrief';
+      $('#btnPlan').disabled = false;
+    } else {
+      $('#roundHeadline').textContent = `Round ${game.round} — negotiation window`;
+      const humanCount = E.ROLE_ORDER.filter((id) => game.roles[id].human && !game.roles[id].eliminated).length;
+      $('#roundInstruction').textContent = humanCount
+        ? `Discuss openly. Then pass the device through ${humanCount} private situation room${humanCount === 1 ? '' : 's'}; AI plans are generated before any human plan is entered.`
+        : 'All five roles are AI-controlled. Resolve the next round, then inspect the public consequences and final reveal.';
+      $('#btnPlan').textContent = humanCount ? 'Begin sealed planning' : 'Resolve AI round';
+      $('#btnPlan').disabled = false;
+    }
+    $('#topStatus').innerHTML = `ROUND <b>${game.round}</b> / ${game.maxRounds} · ${game.over ? 'CONCLUDED' : 'ACTIVE'} · RUNG <b>${game.ladder.rung}</b>`;
+  }
+
+  function renderShared() {
+    if (!game) return;
+    renderLadder();
+    renderPublicRoles();
+    renderStructure();
+    renderLog();
+    renderRoundConsole();
+  }
+
+  function beginPlanning() {
+    if (!game) return;
+    if (game.over) {
+      showDebrief();
+      return;
+    }
+    clearTimer();
+    E.submitAIPlans(game);
+    planningQueue = E.ROLE_ORDER.filter((roleId) => game.roles[roleId].human && !game.roles[roleId].eliminated && !game.plans[roleId]);
+    queueIndex = 0;
+    if (!planningQueue.length) {
+      resolveCurrentRound();
+      return;
+    }
+    showHandoff();
+  }
+
+  function showHandoff() {
+    currentRoleId = planningQueue[queueIndex];
+    const role = game.roles[currentRoleId];
+    const def = E.ROLE_DEFS[currentRoleId];
+    $('#privacyLayer').hidden = false;
+    $('#handoffCard').hidden = false;
+    $('#roomCard').hidden = true;
+    $('#handoffCard').style.setProperty('--role-accent', def.accent);
+    $('#handoffSeal').style.setProperty('--role-accent', def.accent);
+    $('#handoffSeal').textContent = def.short;
+    $('#handoffTitle').textContent = `Pass the device to ${def.name}`;
+    $('#handoffText').textContent = `${queueIndex + 1} of ${planningQueue.length} human rooms this round. Other players should look away; no current-round action has been revealed.`;
+    $('#btnEnterRoom').focus();
+  }
+
+  function enterRoom() {
+    draft = { faction: null, publicAction: null, privateAction: null, target: null };
+    $('#handoffCard').hidden = true;
+    $('#roomCard').hidden = false;
+    renderPrivateRoom();
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }
+
+  function renderPrivateTracks(role) {
+    const tracks = [
+      ['Leadership', role.leadership, '/ 10'],
+      ['Welfare', role.welfare, '/ 10'],
+      ['Credibility', role.credibility, '/ 8'],
+      ['Wiggle room', role.wiggle, '/ 4'],
+    ];
+    $('#privateTracks').innerHTML = tracks.map(([key, value, max]) => `<div class="private-track"><div class="key">${key}</div><div class="value">${value}</div><small>${max}</small></div>`).join('');
+  }
+
+  function renderStakeTable(roleId) {
+    const role = game.roles[roleId];
+    const def = E.ROLE_DEFS[roleId];
+    const rows = Object.entries(role.stakes).map(([issue, tier]) => `
+      <div class="stake-row">
+        <div class="stake-name">${escapeHtml(E.ISSUE_NAME[issue])}</div>
+        <div><span class="temp-chip ${tempClass(tier)}">${escapeHtml(E.TEMP_NAME[tier])}</span></div>
+        <div>L${def.sacrifice.leadership} · W${def.sacrifice.welfare} · C${def.sacrifice.credibility}</div>
+      </div>`).join('');
+    $('#stakeTable').innerHTML = `<div class="stake-row head"><div>Issue</div><div>True temperature</div><div>Maximum sacrifice</div></div>${rows}`;
+  }
+
+  function renderAssetTable(roleId) {
+    const role = game.roles[roleId];
+    const rows = Object.values(role.assets).map((asset) => `
+      <div class="asset-row">
+        <div class="asset-name">${escapeHtml(asset.label)}</div>
+        <div><div class="clock-pips">${pips(asset.clock, asset.max)}</div></div>
+        <div class="desc">${escapeHtml(asset.desc)}</div>
+      </div>`).join('');
+    $('#assetTable').innerHTML = `<div class="asset-row head"><div>Asset</div><div>Clock</div><div>What expires</div></div>${rows}`;
+  }
+
+  function renderFactionChoices(roleId) {
+    const root = $('#factionChoices');
+    const role = game.roles[roleId];
+    const factions = E.ROLE_DEFS[roleId].factions;
+    root.innerHTML = '';
+    Object.entries(factions).forEach(([id, faction]) => {
+      const pressure = role.pressures[id];
+      const card = document.createElement('button');
+      card.type = 'button';
+      card.className = `choice-card ${draft.faction === id ? 'selected' : ''}`;
+      card.dataset.value = id;
+      card.innerHTML = `
+        <span class="choice-title">${escapeHtml(faction.name)}</span>
+        <span class="choice-desc">${escapeHtml(faction.recommendation)}</span>
+        <span class="choice-meta"><span class="meta-chip ${id}">${id}</span></span>
+        <span class="faction-pressure" aria-label="Pressure ${pressure} of 3">${[1, 2, 3].map((n) => `<i class="${n <= pressure ? 'on' : ''} ${pressure === 3 && n <= pressure ? 'max' : ''}"></i>`).join('')}</span>`;
+      card.addEventListener('click', () => { draft.faction = id; renderFactionChoices(roleId); });
+      root.appendChild(card);
+    });
+  }
+
+  function actionMeta(action, roleId) {
+    const chips = [`<span class="meta-chip ${action.alignment}">${escapeHtml(action.alignment)}</span>`];
+    if (action.claim) chips.push(`<span class="meta-chip">claims ${escapeHtml(E.TEMP_NAME[action.claim.tier])}</span>`);
+    if (action.assetCost) {
+      const asset = game.roles[roleId].assets[action.assetCost.id];
+      chips.push(`<span class="meta-chip cost">−${action.assetCost.amount} ${escapeHtml(asset.label)}</span>`);
+    }
+    if (action.targets && action.targets.length) chips.push('<span class="meta-chip">private target</span>');
+    return chips.join('');
+  }
+
+  function renderActionChoices(kind, roleId) {
+    const root = kind === 'public' ? $('#publicChoices') : $('#privateChoices');
+    const actions = kind === 'public' ? E.getPublicActions(game, roleId) : E.getPrivateActions(game, roleId);
+    const selected = kind === 'public' ? draft.publicAction : draft.privateAction;
+    root.innerHTML = '';
+    actions.forEach((action) => {
+      const card = document.createElement('button');
+      card.type = 'button';
+      card.className = `choice-card ${selected === action.id ? 'selected' : ''} ${action.available ? '' : 'disabled'}`;
+      card.disabled = !action.available;
+      card.dataset.value = action.id;
+      card.innerHTML = `<span class="choice-title">${escapeHtml(action.label)}</span><span class="choice-desc">${escapeHtml(action.desc)}</span><span class="choice-meta">${actionMeta(action, roleId)}</span>`;
+      card.addEventListener('click', () => {
+        if (kind === 'public') draft.publicAction = action.id;
+        else {
+          draft.privateAction = action.id;
+          draft.target = action.targets && action.targets.length === 1 ? action.targets[0] : null;
+          renderTargetSelect(roleId);
+        }
+        renderActionChoices(kind, roleId);
+      });
+      root.appendChild(card);
+    });
+  }
+
+  function renderTargetSelect(roleId) {
+    const action = draft.privateAction ? E.getAction('private', roleId, draft.privateAction) : null;
+    const wrap = $('#targetWrap');
+    const select = $('#targetSelect');
+    if (!action || !action.targets || !action.targets.length) {
+      wrap.hidden = true;
+      draft.target = null;
+      return;
+    }
+    wrap.hidden = false;
+    select.innerHTML = action.targets.map((targetId) => `<option value="${escapeHtml(targetId)}">${escapeHtml(E.ROLE_DEFS[targetId].name)}</option>`).join('');
+    if (!draft.target || !action.targets.includes(draft.target)) draft.target = action.targets[0];
+    select.value = draft.target;
+  }
+
+  function renderInbox(roleId) {
+    const inbox = game.roles[roleId].privateInbox || [];
+    $('#privateInbox').innerHTML = inbox.length
+      ? inbox.slice().reverse().map((item) => `<div class="inbox-item ${item.from === 'INTERNAL' ? 'internal' : ''}"><b>R${item.round} · ${escapeHtml(item.from)}</b><br>${escapeHtml(item.text)}</div>`).join('')
+      : '<div class="inbox-empty">No private messages yet. Matching intentions can form a deal during resolution even when the public board shows confrontation.</div>';
+  }
+
+  function renderPrivateRoom() {
+    const role = game.roles[currentRoleId];
+    const def = E.ROLE_DEFS[currentRoleId];
+    $('#roomCard').style.setProperty('--role-accent', def.accent);
+    $('#roomTitle').textContent = def.name;
+    $('#roomBrief').textContent = def.brief;
+    $('#roomRound').textContent = `ROUND ${game.round} / ${game.maxRounds}`;
+    $('#roomError').textContent = '';
+    renderPrivateTracks(role);
+    renderStakeTable(currentRoleId);
+    renderAssetTable(currentRoleId);
+    renderFactionChoices(currentRoleId);
+    renderActionChoices('public', currentRoleId);
+    renderActionChoices('private', currentRoleId);
+    renderTargetSelect(currentRoleId);
+    renderInbox(currentRoleId);
+  }
+
+  function leaveRoom() {
+    $('#roomCard').hidden = true;
+    $('#handoffCard').hidden = false;
+    $('#btnEnterRoom').focus();
+  }
+
+  function sealPlan() {
+    const candidate = { ...draft };
+    const check = E.validatePlan(game, currentRoleId, candidate);
+    if (!check.ok) {
+      $('#roomError').textContent = check.reason;
+      return;
+    }
+    E.submitPlan(game, currentRoleId, candidate);
+    saveGame();
+    queueIndex += 1;
+    if (queueIndex < planningQueue.length) showHandoff();
+    else {
+      $('#privacyLayer').hidden = true;
+      $('#roomCard').hidden = true;
+      $('#handoffCard').hidden = false;
+      resolveCurrentRound();
+    }
+  }
+
+  function publicEventsForRound(round) {
+    return game.publicLog.filter((item) => item.round === round);
+  }
+
+  function resolveCurrentRound() {
+    E.submitAIPlans(game);
+    const result = E.resolveRound(game);
+    if (!result.ok) {
+      openModal('Resolution blocked', `<p>${escapeHtml(result.reason)}</p>`);
+      return;
+    }
+    renderShared();
+    saveGame();
+    const events = publicEventsForRound(result.snapshot.round).slice(-8);
+    const eventHtml = events.map((event) => `<li><b>${escapeHtml(event.type.toUpperCase())}:</b> ${escapeHtml(event.text)}</li>`).join('');
+    const ended = game.over;
+    openModal(`Round ${result.snapshot.round} resolved`, `
+      <p>All five plans were resolved simultaneously. Private exchanges remain in participant inboxes unless the public log records a leak or agreement.</p>
+      <div class="resolution-grid">
+        <div class="resolution-stat"><span class="num">${result.snapshot.start.rung}→${result.snapshot.end.rung}</span><span class="lbl">Escalation rung</span></div>
+        <div class="resolution-stat"><span class="num">${result.snapshot.end.media}</span><span class="lbl">Media heat / 8</span></div>
+        <div class="resolution-stat"><span class="num">${result.snapshot.end.entanglement}</span><span class="lbl">Patron entanglement / 5</span></div>
+      </div>
+      <h3>Publicly observable consequences</h3>
+      <ul>${eventHtml || '<li>No new public event.</li>'}</ul>
+      <div class="worked"><b>Remember:</b> a ladder returning to its old rung does not reset the crisis. Claims, guarantees, faction pressure, depleted clocks, and secret concessions persist.</div>
+      <div class="modal-actions"><button class="primary" id="resolutionContinue" type="button">${ended ? 'Open debrief' : `Continue to round ${game.round}`}</button></div>`);
+    $('#resolutionContinue').addEventListener('click', () => {
+      closeModal();
+      if (ended) showDebrief();
+    });
+  }
+
+  function showHowToPlay() {
+    openModal('How to play The Burr', `
+      <p><b>Goal:</b> secure your real interests and keep your leadership, society, and future leverage intact. The table also receives a shared world-viability score; a narrow national win can coexist with collective catastrophe.</p>
+      <div class="how-grid">
+        <div class="how-card"><b>1 · Negotiate</b><span>Talk openly between rounds. Private side conversations are allowed, but only encoded actions become mechanically binding.</span></div>
+        <div class="how-card"><b>2 · Enter privately</b><span>Pass the device. Each human sees their true stakes, sacrifice ceiling, faction pressure, assets, and backchannel inbox.</span></div>
+        <div class="how-card"><b>3 · Choose two actions</b><span>Select one public action and one private action. All current-round plans remain sealed until everyone has submitted.</span></div>
+        <div class="how-card"><b>4 · Resolve</b><span>Public moves, matching private intentions, accidents, faction events, leaks, and expiring assets transform the crisis.</span></div>
+        <div class="how-card"><b>Public rhetoric</b><span>Hotter claims can deter, but consume wiggle room. A threat that expires unbacked becomes hollow and damages future credibility.</span></div>
+        <div class="how-card"><b>Internal factions</b><span>Privilege one faction each round. Ignored factions accumulate pressure and may leak, resign, or challenge the leadership.</span></div>
+        <div class="how-card"><b>Authoritarian trade-off</b><span>Russia and Belarus pay lower immediate public audience costs, but elite challenges are hidden and can become abrupt regime threats.</span></div>
+        <div class="how-card"><b>Face and secrecy</b><span>UN escrow, inspection, joint language, and secret annexes can make retreat survivable. Secret concessions may later leak.</span></div>
+      </div>
+      <div class="worked"><b>Worked example:</b> Belarus publicly calls the crossing existential, although its real existential stake is regime survival. It privately offers withdrawal for a Russian guarantee. If Russia independently selects the matching conditional guarantee, the package forms. The crossing de-escalates, but Russian entanglement rises and the hidden concession acquires leak risk.</div>
+      <div class="modal-actions"><button class="secondary" id="howClose" type="button">Return</button><button class="primary" id="howTour" type="button">Show me the first round</button></div>`);
+    $('#howClose').addEventListener('click', closeModal);
+    $('#howTour').addEventListener('click', () => { closeModal(); startGuidedRound(); });
+  }
+
+  function showWelcome() {
+    const saved = loadSavedGame();
+    openModal('Welcome to Situation Room', `
+      <p><b>The Burr</b> is the first multiplayer vertical slice: Belarus, Russia, the United States, the European Union, and the United Nations share one crisis while managing five different internal rooms.</p>
+      <div class="worked"><b>The central experience:</b> “I knew which compromise could work, but I could not say it publicly.”</div>
+      <p>Use five humans for the full table, two humans for the proxy–patron core, or let the AI demonstrate the system.</p>
+      <div class="modal-actions">
+        ${saved ? '<button class="secondary" id="welcomeResume" type="button">Resume saved table</button>' : ''}
+        <button class="secondary" id="welcomeHow" type="button">How to play</button>
+        <button class="primary" id="welcomeTour" type="button">Show me a round</button>
+        <button class="secondary" id="welcomeSetup" type="button">Set up table</button>
+      </div>`);
+    if (saved) $('#welcomeResume').addEventListener('click', () => resumeGame(saved));
+    $('#welcomeHow').addEventListener('click', showHowToPlay);
+    $('#welcomeTour').addEventListener('click', () => { closeModal(); startGuidedRound(); });
+    $('#welcomeSetup').addEventListener('click', closeModal);
+  }
+
+  function openModal(title, html) {
+    modalReturnFocus = document.activeElement;
+    $('#modalTitle').textContent = title;
+    $('#modalBody').innerHTML = html;
+    $('#modalLayer').hidden = false;
+    requestAnimationFrame(() => $('#modalClose').focus());
+  }
+
+  function closeModal() {
+    $('#modalLayer').hidden = true;
+    $('#modalBody').innerHTML = '';
+    if (modalReturnFocus && typeof modalReturnFocus.focus === 'function') modalReturnFocus.focus();
+  }
+
+  function startGuidedRound() {
+    clearTimer();
+    tourPreviousHadGame = Boolean(game);
+    tourPreviousGame = game ? E.deepClone(game) : null;
+    game = E.createGame({ humanRoles: [], seed: 'GUIDED-BURR-001', guided: true });
+    E.submitGuidedPlans(game);
+    const result = E.resolveRound(game);
+    setScreen('game');
+    renderShared();
+    const narrative = E.getGuidedNarrative(result);
+    const targets = [
+      '[data-role="BELARUS"]',
+      '[data-role="RUSSIA"]',
+      '[data-role="US"]',
+      '[data-role="EU"]',
+      '#structurePanel',
+      '#ladderPanel',
+    ];
+    tourSteps = narrative.map((step, index) => ({ ...step, target: targets[index] }));
+    tourIndex = 0;
+    $('#tourLayer').hidden = false;
+    renderTourStep();
+  }
+
+  function clearTourFocus() {
+    if (tourFocus) tourFocus.classList.remove('tour-focus');
+    tourFocus = null;
+  }
+
+  function renderTourStep() {
+    clearTourFocus();
+    const step = tourSteps[tourIndex];
+    $('#tourTitle').textContent = step.title;
+    $('#tourText').textContent = step.text;
+    $('#tourCount').textContent = `${tourIndex + 1} / ${tourSteps.length}`;
+    $('#tourBack').disabled = tourIndex === 0;
+    $('#tourNext').textContent = tourIndex === tourSteps.length - 1 ? 'Return to table setup' : 'Next';
+    tourFocus = step.target ? $(step.target) : null;
+    if (tourFocus) {
+      tourFocus.classList.add('tour-focus');
+      tourFocus.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+    }
+    requestAnimationFrame(() => $('#tourNext').focus());
+  }
+
+  function nextTour() {
+    if (tourIndex >= tourSteps.length - 1) {
+      endTour();
+      return;
+    }
+    tourIndex += 1;
+    renderTourStep();
+  }
+
+  function prevTour() {
+    if (tourIndex <= 0) return;
+    tourIndex -= 1;
+    renderTourStep();
+  }
+
+  function endTour() {
+    clearTourFocus();
+    $('#tourLayer').hidden = true;
+    if (tourPreviousHadGame && tourPreviousGame) {
+      game = tourPreviousGame;
+      setScreen('game');
+      renderShared();
+    } else {
+      game = null;
+      setScreen('setup');
+      renderSetup();
+      $('#topStatus').textContent = 'SETUP · 5 ROLES · 6 ROUNDS';
+    }
+    tourPreviousGame = null;
+    tourPreviousHadGame = false;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function showDebrief() {
+    if (!game) return;
+    const score = E.scoreGame(game);
+    const roleRows = E.ROLE_ORDER.map((roleId) => {
+      const row = score.roles[roleId];
+      return `<div class="role">${escapeHtml(E.ROLE_DEFS[roleId].name)}</div><div>${row.interests}/10</div><div>${row.leadership}/10</div><div>${row.welfare}/10</div><div>${row.futureLeverage}/10</div>`;
+    }).join('');
+    const reveals = E.ROLE_ORDER.map((roleId) => {
+      const role = game.roles[roleId];
+      const stakes = Object.entries(role.stakes).map(([issue, tier]) => `${E.ISSUE_NAME[issue]} = ${E.TEMP_NAME[tier]}`).join(' · ');
+      const overclaims = role.claims.filter((claim) => claim.bluff).map((claim) => `${E.ISSUE_NAME[claim.issue]}→${E.TEMP_NAME[claim.tier]}`);
+      const hollow = role.claims.filter((claim) => claim.resolved && !claim.backed).length;
+      return `<div class="reveal-role"><h4>${escapeHtml(role.name)}</h4><div class="stake-summary">${escapeHtml(stakes)}<br>Overclaims: ${overclaims.length ? escapeHtml(overclaims.join(' · ')) : 'none'} · Hollow expiries: ${hollow} · Bluff fatigue: ${role.bluffFatigue} · Faction events: ${role.factionEvents.length}</div></div>`;
+    }).join('');
+    const dealList = game.secretDeals.length
+      ? game.secretDeals.map((deal) => `<li><b>${escapeHtml(deal.title)}</b> — ${escapeHtml(deal.text)} ${deal.leaked ? '<span style="color:var(--red)">[LEAKED]</span>' : deal.protected ? '<span style="color:var(--cyan)">[PROTECTED]</span>' : '[SECRET]'}</li>`).join('')
+      : '<li>No secret deal formed.</li>';
+    openModal('Debrief — the hidden rooms revealed', `
+      <p><b>${escapeHtml(score.endReason)}</b></p>
+      <div class="world-score"><div class="num">${score.worldViability}</div><div class="lbl">Shared world viability / 100</div></div>
+      <div class="score-table">
+        <div class="head">Role</div><div class="head">Interests</div><div class="head">Leadership</div><div class="head">Welfare</div><div class="head">Future leverage</div>
+        ${roleRows}
+      </div>
+      <h3>True stakes and internal residue</h3>
+      <div class="reveal-list">${reveals}</div>
+      <h3>Secret commitment ledger</h3>
+      <ul>${dealList}</ul>
+      <div class="worked"><b>Interpretation:</b> compare the strategic score with leadership survival, national welfare, and world viability. A government can “win” its narrow objective while damaging the constituency it claims to protect.</div>
+      <div class="modal-actions"><button class="secondary" id="debriefExport" type="button">Export replay JSON</button><button class="secondary" id="debriefFeedback" type="button">Give playtest feedback</button><button class="primary" id="debriefNew" type="button">New table</button></div>`);
+    $('#debriefExport').addEventListener('click', exportReplay);
+    $('#debriefFeedback').addEventListener('click', () => window.open(FEEDBACK_URL, '_blank', 'noopener,noreferrer'));
+    $('#debriefNew').addEventListener('click', () => { closeModal(); newTable(); });
+  }
+
+  function newTable() {
+    clearTimer();
+    clearSavedGame();
+    game = null;
+    setScreen('setup');
+    renderSetup();
+    $('#topStatus').textContent = 'SETUP · 5 ROLES · 6 ROUNDS';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function exportReplay() {
+    if (!game) return;
+    const data = E.exportReplay(game);
+    const blob = new Blob([data], { type: 'application/json' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `situation-room-the-burr-${game.seed}.json`.replace(/[^a-z0-9._-]+/gi, '-');
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+  }
+
+  function updateTimerDisplay() {
+    const minutes = Math.floor(timerSeconds / 60).toString().padStart(2, '0');
+    const seconds = (timerSeconds % 60).toString().padStart(2, '0');
+    $('#timerDisplay').textContent = `${minutes}:${seconds}`;
+  }
+
+  function startTimer() {
+    if (timerHandle) {
+      clearTimer();
+      return;
+    }
+    timerSeconds = 120;
+    $('#timerDisplay').hidden = false;
+    $('#btnTimer').textContent = 'Stop table timer';
+    updateTimerDisplay();
+    timerHandle = window.setInterval(() => {
+      timerSeconds -= 1;
+      updateTimerDisplay();
+      if (timerSeconds <= 0) {
+        clearTimer(false);
+        $('#timerDisplay').hidden = false;
+        $('#timerDisplay').textContent = 'TIME';
+      }
+    }, 1000);
+  }
+
+  function clearTimer(hide) {
+    if (timerHandle) window.clearInterval(timerHandle);
+    timerHandle = null;
+    $('#btnTimer').textContent = 'Start 2:00 table timer';
+    if (hide !== false) $('#timerDisplay').hidden = true;
+  }
+
+  function wireEvents() {
+    $('#presetFive').addEventListener('click', () => applyPreset('five'));
+    $('#presetTwo').addEventListener('click', () => applyPreset('two'));
+    $('#presetObserver').addEventListener('click', () => applyPreset('observer'));
+    $('#btnStart').addEventListener('click', startGame);
+    $('#btnHow').addEventListener('click', showHowToPlay);
+    $('#btnShowMe').addEventListener('click', startGuidedRound);
+    $('#btnPlan').addEventListener('click', beginPlanning);
+    $('#btnTimer').addEventListener('click', startTimer);
+    $('#btnExport').addEventListener('click', exportReplay);
+    $('#btnEnterRoom').addEventListener('click', enterRoom);
+    $('#btnLeaveRoom').addEventListener('click', leaveRoom);
+    $('#btnSealPlan').addEventListener('click', sealPlan);
+    $('#targetSelect').addEventListener('change', (event) => { draft.target = event.target.value; });
+    $('#modalClose').addEventListener('click', closeModal);
+    $('#modalLayer').addEventListener('click', (event) => { if (event.target === $('#modalLayer')) closeModal(); });
+    $('#tourClose').addEventListener('click', endTour);
+    $('#tourNext').addEventListener('click', nextTour);
+    $('#tourBack').addEventListener('click', prevTour);
+    document.addEventListener('keydown', (event) => {
+      if (!$('#tourLayer').hidden) {
+        if (event.key === 'Escape') endTour();
+        else if (event.key === 'ArrowRight') nextTour();
+        else if (event.key === 'ArrowLeft') prevTour();
+        return;
+      }
+      if (!$('#modalLayer').hidden && event.key === 'Escape') closeModal();
+    });
+  }
+
+  function boot() {
+    renderSetup();
+    wireEvents();
+    setScreen('setup');
+    window.setTimeout(showWelcome, 250);
+  }
+
+  boot();
+
+  window.__SituationRoomApp = {
+    get game() { return game; },
+    startGame,
+    beginPlanning,
+    startGuidedRound,
+    showDebrief,
+    newTable,
+  };
+})();
+
+</script>
+</body>
+</html>

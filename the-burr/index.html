@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Situation Room: The Burr — a five-role pass-and-play crisis bargaining prototype.">
+  <title>Situation Room — The Burr</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="scanlines" aria-hidden="true"></div>
+  <header class="topbar">
+    <a class="brand" href="../index.html" aria-label="Situation Room home">
+      <span class="classification">TABLE PROTOTYPE</span>
+      <span class="brand-title">Situation <b>Room</b></span>
+    </a>
+    <div class="top-actions">
+      <button class="micro" id="btnHow" type="button">How to Play</button>
+      <button class="micro accent" id="btnShowMe" type="button">Show Me a Round</button>
+      <div class="status-box mono">
+        SCENARIO <b>THE BURR</b><br>
+        <span id="topStatus">SETUP · 5 ROLES · 6 ROUNDS</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="shell">
+    <section id="setupScreen" class="setup-screen">
+      <div class="hero-grid">
+        <div class="hero-copy">
+          <div class="eyebrow mono">ONE SHARED CRISIS · FIVE PRIVATE ROOMS</div>
+          <h1>The Burr</h1>
+          <p>A lethal border incident lets a small proxy manufacture commitment from a larger patron. Every government must manage the world outside and the factions inside its own situation room.</p>
+          <div class="formula mono">1 ladder · 2 actions · 3 factions · 4 assets · 6 rounds</div>
+          <div class="hero-actions">
+            <button class="primary" id="presetFive" type="button">Five-player table</button>
+            <button class="secondary" id="presetTwo" type="button">Two-player quick start</button>
+            <button class="secondary" id="presetObserver" type="button">Observer / all AI</button>
+          </div>
+        </div>
+        <aside class="briefing-card">
+          <span class="card-tag mono">SCENARIO BRIEF</span>
+          <p>A Belarusian border patrol incident has killed personnel near an alliance frontier. Belarus calls the crossing existential. Russia has offered ambiguous support. The EU is building sanctions unity. The United States is reassuring allies. The UN is trying to create a reversible interval before public commitments weld the ladder shut.</p>
+          <div class="briefing-callout">
+            <b>The design test</b>
+            <span>Can Belarus entrap Russia through incentives rather than scripted events—and can the table find a settlement that everyone can survive publicly?</span>
+          </div>
+        </aside>
+      </div>
+
+      <div class="section-label mono">Assign seats — human players use pass-and-play; AI fills the rest</div>
+      <div id="roleSetup" class="role-setup"></div>
+
+      <div class="setup-footer">
+        <label class="seed-field mono">REPLAY SEED
+          <input id="seedInput" type="text" value="BURR-001" maxlength="32" autocomplete="off">
+        </label>
+        <div class="setup-note">Current-round plans remain sealed until simultaneous resolution. The privacy screen is social, not cryptographic.</div>
+        <button class="primary launch" id="btnStart" type="button">Open the table</button>
+      </div>
+    </section>
+
+    <section id="gameScreen" class="game-screen" hidden>
+      <div class="crisis-brief">
+        <span class="tag mono">PUBLIC BOARD</span>
+        <p><b>Table talk is open.</b> Public actions appear here after resolution. Private actions are visible only in the sending and receiving situation rooms unless they leak.</p>
+      </div>
+
+      <div class="dashboard">
+        <section class="panel ladder-panel" id="ladderPanel">
+          <div class="panel-head">
+            <div><span class="kicker mono">SHARED RATCHET</span><h2>Escalation ladder</h2></div>
+            <div class="metric"><span id="rungValue">3</span><small id="rungName">Border confrontation</small></div>
+          </div>
+          <div class="ladder" id="ladder"></div>
+          <div class="ladder-note mono">Rungs above 5 weld behind a climb. A verified or face-saving package is needed to reopen them.</div>
+        </section>
+
+        <section class="panel actors-panel" id="actorsPanel">
+          <div class="panel-head">
+            <div><span class="kicker mono">PUBLIC POSTURES</span><h2>Actors at the table</h2></div>
+            <span class="head-note mono">PRIVATE TRACKS HIDDEN</span>
+          </div>
+          <div id="publicRoles" class="public-roles"></div>
+        </section>
+
+        <section class="panel structure-panel" id="structurePanel">
+          <div class="panel-head">
+            <div><span class="kicker mono">STRUCTURAL PRESSURE</span><h2>Clocks and commitments</h2></div>
+          </div>
+          <div class="track-block">
+            <div class="track-label mono"><span>Media heat</span><b id="mediaValue">2 / 8</b></div>
+            <div class="bar"><i id="mediaBar"></i></div>
+          </div>
+          <div class="track-block">
+            <div class="track-label mono"><span>Russia ↔ Belarus entanglement</span><b id="entanglementValue">2 / 5</b></div>
+            <div class="bar entangle"><i id="entanglementBar"></i></div>
+          </div>
+          <div class="subhead mono">SELL-BY-DATE ASSETS</div>
+          <div id="publicClocks" class="public-clocks"></div>
+          <div class="subhead mono">PUBLIC COMMITMENT LEDGER</div>
+          <div id="commitmentLedger" class="ledger"></div>
+        </section>
+      </div>
+
+      <section class="round-console panel" id="roundConsole">
+        <div class="round-copy">
+          <span class="kicker mono">ROUND CONTROL</span>
+          <h2 id="roundHeadline">Round 1 — negotiation window</h2>
+          <p id="roundInstruction">Discuss openly. When ready, begin sealed planning. Each human player will receive the device in turn; AI plans are generated but remain hidden.</p>
+        </div>
+        <div class="round-actions">
+          <button class="secondary" id="btnTimer" type="button">Start 2:00 table timer</button>
+          <span class="timer mono" id="timerDisplay" hidden>02:00</span>
+          <button class="primary" id="btnPlan" type="button">Begin sealed planning</button>
+        </div>
+      </section>
+
+      <section class="panel log-panel" id="logPanel">
+        <div class="panel-head">
+          <div><span class="kicker mono">AUDIT TRAIL</span><h2>Public situation log</h2></div>
+          <button class="micro" id="btnExport" type="button">Export replay</button>
+        </div>
+        <div id="publicLog" class="public-log"></div>
+      </section>
+    </section>
+  </main>
+
+  <div id="privacyLayer" class="privacy-layer" hidden>
+    <div id="handoffCard" class="handoff-card">
+      <span class="classification">PRIVATE HANDOFF</span>
+      <div class="role-seal" id="handoffSeal">BY</div>
+      <h2 id="handoffTitle">Pass the device to Belarus</h2>
+      <p id="handoffText">Other players should look away. Current-round choices are simultaneous and will not be revealed until resolution.</p>
+      <button class="primary" id="btnEnterRoom" type="button">Enter private room</button>
+    </div>
+
+    <div id="roomCard" class="room-card" hidden>
+      <header class="room-head">
+        <div>
+          <span class="kicker mono">PRIVATE SITUATION ROOM</span>
+          <h2 id="roomTitle">Belarus</h2>
+          <p id="roomBrief"></p>
+        </div>
+        <div class="room-round mono" id="roomRound">ROUND 1 / 6</div>
+      </header>
+      <div class="room-grid">
+        <section class="room-section" id="privateStateSection">
+          <h3>Private state</h3>
+          <div id="privateTracks" class="private-tracks"></div>
+          <div class="subhead mono">TRUE STAKES · ONLY YOU SEE THIS</div>
+          <div id="stakeTable" class="stake-table"></div>
+          <div class="subhead mono">ASSET CLOCKS</div>
+          <div id="assetTable" class="asset-table"></div>
+        </section>
+
+        <section class="room-section" id="factionSection">
+          <h3>1 · Whose advice do you privilege?</h3>
+          <p class="section-help">Following one faction relieves it. Ignored factions may accumulate pressure and eventually act without you.</p>
+          <div id="factionChoices" class="choice-grid faction-grid"></div>
+        </section>
+
+        <section class="room-section" id="publicActionSection">
+          <h3>2 · Public action</h3>
+          <p class="section-help">Visible to everyone after simultaneous resolution. Public claims consume wiggle room and can become hollow if they expire unbacked.</p>
+          <div id="publicChoices" class="choice-grid"></div>
+        </section>
+
+        <section class="room-section" id="privateActionSection">
+          <h3>3 · Private action</h3>
+          <p class="section-help">Visible only to participants unless it leaks. Matching private intentions can form a deal in the same round.</p>
+          <div id="privateChoices" class="choice-grid"></div>
+          <label id="targetWrap" class="target-wrap mono" hidden>PRIVATE TARGET
+            <select id="targetSelect"></select>
+          </label>
+        </section>
+
+        <section class="room-section inbox-section">
+          <h3>Backchannel inbox</h3>
+          <div id="privateInbox" class="inbox"></div>
+        </section>
+      </div>
+      <div class="room-footer">
+        <div id="roomError" class="room-error" role="alert"></div>
+        <button class="secondary" id="btnLeaveRoom" type="button">Return to handoff</button>
+        <button class="primary" id="btnSealPlan" type="button">Seal this plan</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="modalLayer" class="modal-layer" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <header class="modal-head">
+        <span class="classification">BRIEF</span>
+        <h2 id="modalTitle">—</h2>
+        <button class="close" id="modalClose" type="button" aria-label="Close dialog">×</button>
+      </header>
+      <div id="modalBody" class="modal-body"></div>
+    </div>
+  </div>
+
+  <div id="tourLayer" class="tour-layer" hidden>
+    <div class="tour-card" role="dialog" aria-labelledby="tourTitle">
+      <div class="tour-meta">
+        <span class="mono">OBSERVER WALKTHROUGH</span>
+        <b id="tourCount" class="mono">1 / 6</b>
+        <button class="close" id="tourClose" type="button" aria-label="End walkthrough">×</button>
+      </div>
+      <h2 id="tourTitle">—</h2>
+      <p id="tourText"></p>
+      <div class="tour-actions">
+        <button class="secondary" id="tourBack" type="button">Back</button>
+        <button class="primary" id="tourNext" type="button">Next</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="engine.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

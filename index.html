@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Situation Room — playable crisis bargaining games about escalation, hidden stakes, internal factions, and face-saving diplomacy.">
+  <title>Situation Room — Crisis Bargaining Games</title>
+  <style>
+    :root{--bg:#080d13;--panel:#111a25;--panel2:#172231;--line:#2a3a4d;--ink:#e8eef5;--muted:#a5b4c5;--dim:#6e8197;--amber:#f0aa35;--cyan:#54d3d3;--red:#eb6049;--display:"Arial Narrow",Arial,sans-serif;--mono:ui-monospace,SFMono-Regular,Menlo,monospace;--body:Georgia,serif}
+    *{box-sizing:border-box;margin:0;padding:0}body{min-height:100vh;color:var(--ink);font-family:var(--body);background:radial-gradient(1100px 520px at 50% -10%,#16283a 0%,transparent 65%),radial-gradient(850px 500px at 100% 115%,#241827 0%,transparent 55%),var(--bg);line-height:1.5;padding:0 18px 70px}.top{max-width:1300px;margin:auto;padding:24px 0 17px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:15px}.brand{font:600 23px var(--display);letter-spacing:.08em;text-transform:uppercase}.brand b{color:var(--amber)}.top span{font:9px var(--mono);letter-spacing:.12em;color:var(--cyan);text-transform:uppercase}.hero{max-width:1300px;margin:34px auto 24px;padding:clamp(28px,6vw,82px);border:1px solid var(--line);border-radius:10px;background:linear-gradient(180deg,rgba(18,28,40,.97),rgba(10,15,22,.98));position:relative;overflow:hidden}.hero:after{content:"";position:absolute;width:500px;height:500px;border:1px solid rgba(84,211,211,.18);border-radius:50%;right:-210px;bottom:-300px;box-shadow:0 0 0 55px rgba(84,211,211,.025),0 0 0 110px rgba(84,211,211,.015)}.eyebrow{font:9px var(--mono);letter-spacing:.16em;color:var(--cyan);text-transform:uppercase}.hero h1{font:700 clamp(58px,10vw,132px)/.88 var(--display);text-transform:uppercase;letter-spacing:.025em;margin:20px 0 22px;position:relative;z-index:1}.hero p{max-width:780px;color:var(--muted);font-size:clamp(17px,2vw,23px);position:relative;z-index:1}.principle{display:inline-block;margin-top:25px;padding:9px 12px;border-left:3px solid var(--amber);background:rgba(240,170,53,.06);color:var(--amber);font:10px var(--mono);letter-spacing:.07em;position:relative;z-index:1}.modes{max-width:1300px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:16px}.mode{min-height:360px;padding:28px;border:1px solid var(--line);border-top:3px solid var(--accent);border-radius:8px;background:linear-gradient(180deg,var(--panel2),var(--panel));display:flex;flex-direction:column}.tag{font:8px var(--mono);letter-spacing:.15em;text-transform:uppercase;color:var(--accent)}.mode h2{font:600 31px var(--display);letter-spacing:.055em;text-transform:uppercase;margin:12px 0}.mode p{color:var(--muted);font-size:16px}.features{margin:20px 0;color:var(--dim);font:10px/1.7 var(--mono)}.features b{color:var(--ink);font-weight:500}.launch{margin-top:auto;display:flex;justify-content:space-between;align-items:center;gap:12px;padding-top:22px;border-top:1px solid var(--line)}.launch span{color:var(--dim);font:9px var(--mono)}.launch a{text-decoration:none;background:var(--accent);color:#081017;border-radius:4px;padding:12px 16px;font:700 11px var(--display);letter-spacing:.07em;text-transform:uppercase}.foot{max-width:1300px;margin:28px auto 0;padding-top:17px;border-top:1px solid var(--line);color:var(--dim);font:9.5px/1.65 var(--mono)}.foot b{color:var(--muted)}@media(max-width:760px){body{padding-left:10px;padding-right:10px}.top{align-items:flex-start}.top span{text-align:right}.hero{padding:30px 22px}.hero h1{font-size:62px}.modes{grid-template-columns:1fr}.mode{min-height:330px}.launch{align-items:flex-start;flex-direction:column}.launch a{width:100%;text-align:center}}
+  </style>
+</head>
+<body>
+  <header class="top"><div class="brand">Situation <b>Room</b></div><span>crisis bargaining · escalation dynamics · hidden stakes</span></header>
+  <main>
+    <section class="hero">
+      <div class="eyebrow">Not a war game · a game about how wars become difficult to stop</div>
+      <h1>Read the room.</h1>
+      <p>Public commitments, private survival stakes, internal factions, proxies, expiring leverage, backchannels, and face-saving diplomacy all act on the same escalation ratchet.</p>
+      <div class="principle">A ladder can return to its old rung while the crisis becomes structurally less reversible.</div>
+    </section>
+
+    <section class="modes" aria-label="Playable modes">
+      <article class="mode" style="--accent:var(--cyan)">
+        <span class="tag">Multiplayer milestone · pass-and-play</span>
+        <h2>The Burr</h2>
+        <p>Five private situation rooms share one border crisis. Belarus can manufacture Russian commitment; the major powers must distinguish reassurance from entrapment.</p>
+        <div class="features"><b>Roles:</b> UN · United States · Russia · European Union · Belarus<br><b>Players:</b> 2–5 humans; AI fills empty seats<br><b>Loop:</b> table talk → private planning → simultaneous resolution<br><b>Includes:</b> guided first round, internal factions, secret annexes, bluff fatigue, expiring assets</div>
+        <div class="launch"><span>Public alpha v0.1 · six rounds</span><a href="the-burr/index.html">Launch multiplayer</a></div>
+      </article>
+
+      <article class="mode" style="--accent:var(--amber)">
+        <span class="tag">Solo training scenario</span>
+        <h2>Gulf 2026</h2>
+        <p>Play the UN mediator in the original Conviction: Existential scenario. Read hidden stake temperatures and broker a climb-down before high rungs weld shut.</p>
+        <div class="features"><b>Role:</b> UN Special Mediator<br><b>Players:</b> one<br><b>Loop:</b> read → probe → assess → broker<br><b>Includes:</b> How to Play, Show Me tour, calibration reveal, regime/nation split</div>
+        <div class="launch"><span>Training mode · eight turns</span><a href="training/index.html">Launch solo training</a></div>
+      </article>
+    </section>
+  </main>
+  <footer class="foot"><b>Public alpha:</b> test whether proxy–patron entrapment, public/private divergence, and internal faction pressure can emerge from a compact six-round system before adding China, Iran, or North Korea. &nbsp;·&nbsp; <a style="color:var(--cyan)" href="https://github.com/EARTHTOEDWARD/situation-room/issues/new?template=playtest.yml&title=Playtest%20feedback%3A%20The%20Burr">Give playtest feedback</a> &nbsp;·&nbsp; <a style="color:var(--muted)" href="https://github.com/EARTHTOEDWARD/situation-room">Source</a></footer>
+</body>
+</html>

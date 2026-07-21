@@ -1,0 +1,78 @@
+name: Situation Room playtest
+description: Report a completed or interrupted playtest of The Burr.
+title: "Playtest feedback: "
+labels: [playtest]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for testing **Situation Room: The Burr**. Brief, candid reports are useful. Attach the exported replay JSON by dragging it into the issue when possible.
+  - type: input
+    id: players
+    attributes:
+      label: Players and human roles
+      description: How many people played, and which roles were human?
+      placeholder: "5 people — Belarus, Russia, US, EU, UN"
+    validations:
+      required: true
+  - type: input
+    id: duration
+    attributes:
+      label: Session length
+      placeholder: "62 minutes"
+  - type: input
+    id: final-rung
+    attributes:
+      label: Final escalation rung
+      placeholder: "5 — Limited mobilisation"
+  - type: textarea
+    id: interesting
+    attributes:
+      label: Most interesting decision
+    validations:
+      required: true
+  - type: textarea
+    id: confusing
+    attributes:
+      label: Most confusing rule or screen
+    validations:
+      required: true
+  - type: textarea
+    id: diplomacy
+    attributes:
+      label: Did private diplomacy matter?
+      description: Describe one bargain, bluff, leak, or secret concession that changed play.
+  - type: textarea
+    id: factions
+    attributes:
+      label: Did internal factions change behaviour?
+  - type: textarea
+    id: entrapment
+    attributes:
+      label: Did Belarus meaningfully influence or entrap Russia?
+  - type: textarea
+    id: trapped
+    attributes:
+      label: Did anyone become trapped by a public commitment?
+  - type: textarea
+    id: remove
+    attributes:
+      label: One mechanic to remove or simplify
+  - type: textarea
+    id: strengthen
+    attributes:
+      label: One mechanic to strengthen
+  - type: dropdown
+    id: replay
+    attributes:
+      label: Would you play again?
+      options:
+        - Yes
+        - Maybe
+        - No
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why?

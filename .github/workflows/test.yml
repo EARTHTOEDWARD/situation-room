@@ -1,0 +1,30 @@
+name: Validate Situation Room
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install browser test dependency
+        run: |
+          python -m pip install --upgrade pip
+          pip install playwright
+          python -m playwright install --with-deps chromium
+      - name: Multiplayer engine checks
+        run: node tests/test_engine.js
+      - name: Static and browser checks
+        run: python -m unittest tests/test_browser.py -v
+      - name: Solo training engine checks
+        working-directory: training/engine
+        run: python test_existential.py

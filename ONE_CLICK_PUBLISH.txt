@@ -1,0 +1,21 @@
+SITUATION ROOM — PUBLIC ALPHA PUBLISHER
+
+Target repository:
+  https://github.com/EARTHTOEDWARD/situation-room
+
+Public game link after deployment:
+  https://earthtoedward.github.io/situation-room/
+
+macOS:
+  Double-click publish_github.command
+
+macOS/Linux terminal:
+  ./publish_github.sh
+
+Windows PowerShell:
+  ./publish_github.ps1
+
+Requirements:
+  Git and GitHub CLI (gh). The launcher opens GitHub sign-in when needed,
+  creates or updates the public repository, enables Pages, watches the
+  deployment, and prints the final links.
