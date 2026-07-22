@@ -68,6 +68,11 @@
     return `--role-accent:${E.ROLE_DEFS[roleId].accent}`;
   }
 
+  function humanRoleIds(sourceGame) {
+    const roles = sourceGame ? sourceGame.roles : null;
+    return E.ROLE_ORDER.filter((roleId) => roles ? roles[roleId].human : setupHumans.has(roleId));
+  }
+
   function renderSetup() {
     const root = $('#roleSetup');
     root.innerHTML = '';
@@ -83,10 +88,10 @@
           <div class="role-badge">${escapeHtml(def.short)}</div>
           <h3>${escapeHtml(def.name)}</h3>
         </div>
-        <p>${escapeHtml(def.brief)}</p>
+        <p>${escapeHtml(def.publicBrief)}</p>
         <div class="seat-toggle" role="group" aria-label="${escapeHtml(def.name)} seat type">
           <button type="button" data-seat="human" class="${isHuman ? 'active' : ''}">Human</button>
-          <button type="button" data-seat="ai" class="${!isHuman ? 'active' : ''}">AI</button>
+          <button type="button" data-seat="npc" class="${!isHuman ? 'active' : ''}">NPC</button>
         </div>`;
       card.querySelectorAll('[data-seat]').forEach((button) => {
         button.addEventListener('click', () => {
@@ -97,14 +102,28 @@
       });
       root.appendChild(card);
     });
+    const soloField = $('#soloRoleField');
+    const soloSelect = $('#soloRoleSelect');
+    const selectedRoles = humanRoleIds();
+    soloField.hidden = selectedRoles.length !== 1;
+    soloSelect.innerHTML = E.ROLE_ORDER.map((roleId) => `<option value="${roleId}">${escapeHtml(E.ROLE_DEFS[roleId].name)}</option>`).join('');
+    if (selectedRoles.length === 1) soloSelect.value = selectedRoles[0];
+    if (selectedRoles.length === 1) {
+      $('#setupNote').textContent = `Solo command: you control ${E.ROLE_DEFS[selectedRoles[0]].name}; four rules-based NPCs carry the evolving crisis state forward. Choose another role here at any time.`;
+    } else if (selectedRoles.length === 0) {
+      $('#setupNote').textContent = 'Observer mode: all five rules-based NPCs act. Use this for a deterministic demonstration, not as evidence of human balance.';
+    } else {
+      $('#setupNote').textContent = 'Current-round plans remain sealed until simultaneous resolution. The privacy screen is social, not cryptographic.';
+    }
     $('#btnStart').textContent = setupHumans.size
       ? `Open the table · ${setupHumans.size} human${setupHumans.size === 1 ? '' : 's'}`
-      : 'Open observer table · all AI';
+      : 'Open observer table · all NPCs';
   }
 
   function applyPreset(name) {
     if (name === 'five') setupHumans = new Set(E.ROLE_ORDER);
     else if (name === 'two') setupHumans = new Set(['BELARUS', 'RUSSIA']);
+    else if (name === 'solo') setupHumans = new Set(['UN']);
     else setupHumans = new Set();
     renderSetup();
   }
@@ -116,10 +135,17 @@
     setScreen('game');
     renderShared();
     saveGame();
+    const humans = humanRoleIds(game);
+    const solo = humans.length === 1;
+    const opening = solo
+      ? `<p><b>Solo command: you control ${escapeHtml(E.ROLE_DEFS[humans[0]].name)}.</b> Four rules-based NPCs read the public crisis and their own carried role state, then seal legal plans before you choose. The replay seed is <span class="mono">${escapeHtml(game.seed)}</span>.</p>
+         <div class="worked"><b>Round loop:</b> inspect the public board → enter your situation room → seal one public and one private action → resolve all five plans simultaneously.</div>
+         <p>No external AI service is used. NPC policy is deterministic and scenario-specific; private NPC rooms remain hidden until the debrief.</p>`
+      : `<p><b>${setupHumans.size || 'No'} human seat${setupHumans.size === 1 ? '' : 's'}.</b> The remaining roles are controlled by deterministic scenario NPCs using replay seed <span class="mono">${escapeHtml(game.seed)}</span>.</p>
+         <div class="worked"><b>Round loop:</b> negotiate openly → pass the device through private rooms → seal one public and one private action per role → resolve simultaneously.</div>
+         <p>Do not show another player your private stakes, faction pressure, inbox, or selected actions. Off-device promises are political speech; only actions encoded in the app are mechanically binding.</p>`;
     openModal('Table opened', `
-      <p><b>${setupHumans.size || 'No'} human seat${setupHumans.size === 1 ? '' : 's'}.</b> The remaining roles are controlled by deterministic scenario AI using replay seed <span class="mono">${escapeHtml(game.seed)}</span>.</p>
-      <div class="worked"><b>Round loop:</b> negotiate openly → pass the device through private rooms → seal one public and one private action per role → resolve simultaneously.</div>
-      <p>Do not show another player your private stakes, faction pressure, inbox, or selected actions. Off-device promises are political speech; only actions encoded in the app are mechanically binding.</p>
+      ${opening}
       <div class="modal-actions"><button class="primary" id="modalBegin" type="button">Begin at the public board</button></div>`);
     $('#modalBegin').addEventListener('click', closeModal);
   }
@@ -173,7 +199,7 @@
         <div class="public-role-top">
           <div class="role-badge">${escapeHtml(def.short)}</div>
           <h3>${escapeHtml(def.name)}</h3>
-          <span class="seat">${role.human ? 'human' : 'AI'}</span>
+          <span class="seat">${role.human ? 'human' : 'NPC'}</span>
         </div>
         <div class="stability ${status}"><i></i>${escapeHtml(status)}</div>
         <div class="posture">
@@ -234,13 +260,28 @@
       $('#btnPlan').disabled = false;
     } else {
       $('#roundHeadline').textContent = `Round ${game.round} — negotiation window`;
-      const humanCount = E.ROLE_ORDER.filter((id) => game.roles[id].human && !game.roles[id].eliminated).length;
-      $('#roundInstruction').textContent = humanCount
-        ? `Discuss openly. Then pass the device through ${humanCount} private situation room${humanCount === 1 ? '' : 's'}; AI plans are generated before any human plan is entered.`
-        : 'All five roles are AI-controlled. Resolve the next round, then inspect the public consequences and final reveal.';
-      $('#btnPlan').textContent = humanCount ? 'Begin sealed planning' : 'Resolve AI round';
+      const activeHumans = humanRoleIds(game).filter((roleId) => !game.roles[roleId].eliminated);
+      if (game.mode === 'solo' && activeHumans.length === 1) {
+        const roleName = E.ROLE_DEFS[activeHumans[0]].name;
+        $('#roundInstruction').textContent = `Read the public board and your ${roleName} inbox. Four NPC plans will be sealed before you enter your room; commitments, faction pressure, and expiring assets carry into the next round.`;
+        $('#btnPlan').textContent = `Plan ${roleName}'s move`;
+      } else if (activeHumans.length) {
+        $('#roundInstruction').textContent = `Discuss openly. Then pass the device through ${activeHumans.length} private situation room${activeHumans.length === 1 ? '' : 's'}; NPC plans are generated before any human plan is entered.`;
+        $('#btnPlan').textContent = 'Begin sealed planning';
+      } else {
+        $('#roundInstruction').textContent = 'All active roles are NPC-controlled. Resolve the next round, then inspect the public consequences and final reveal.';
+        $('#btnPlan').textContent = 'Resolve NPC round';
+      }
       $('#btnPlan').disabled = false;
     }
+    if (game.mode === 'solo') {
+      $('#crisisBriefText').innerHTML = '<b>You command one private room.</b> NPC public actions appear here after resolution. Private offers addressed to your role arrive in its inbox; other rooms remain hidden until the debrief.';
+    } else if (game.mode === 'observer') {
+      $('#crisisBriefText').innerHTML = '<b>Observer run.</b> All roles are controlled by rules-based NPCs. Follow public consequences here; hidden rooms are revealed only in the debrief.';
+    } else {
+      $('#crisisBriefText').innerHTML = '<b>Table talk is open.</b> Public actions appear here after resolution. Private actions are visible only in the sending and receiving situation rooms unless they leak.';
+    }
+    if (!timerHandle) $('#btnTimer').textContent = timerStartLabel();
     $('#topStatus').innerHTML = `ROUND <b>${game.round}</b> / ${game.maxRounds} · ${game.over ? 'CONCLUDED' : 'ACTIVE'} · RUNG <b>${game.ladder.rung}</b>`;
   }
 
@@ -260,7 +301,11 @@
       return;
     }
     clearTimer();
-    E.submitAIPlans(game);
+    const npcResult = E.submitNPCPlans(game);
+    if (!npcResult.ok) {
+      openModal('Planning blocked', `<p>${escapeHtml(npcResult.reason)}</p>`);
+      return;
+    }
     planningQueue = E.ROLE_ORDER.filter((roleId) => game.roles[roleId].human && !game.roles[roleId].eliminated && !game.plans[roleId]);
     queueIndex = 0;
     if (!planningQueue.length) {
@@ -280,8 +325,11 @@
     $('#handoffCard').style.setProperty('--role-accent', def.accent);
     $('#handoffSeal').style.setProperty('--role-accent', def.accent);
     $('#handoffSeal').textContent = def.short;
-    $('#handoffTitle').textContent = `Pass the device to ${def.name}`;
-    $('#handoffText').textContent = `${queueIndex + 1} of ${planningQueue.length} human rooms this round. Other players should look away; no current-round action has been revealed.`;
+    const soloRoom = game.mode === 'solo' && planningQueue.length === 1;
+    $('#handoffTitle').textContent = soloRoom ? `Enter your ${def.name} situation room` : `Pass the device to ${def.name}`;
+    $('#handoffText').textContent = soloRoom
+      ? 'Four NPC plans are already sealed. Review only what your role knows, then choose one public and one private action.'
+      : `${queueIndex + 1} of ${planningQueue.length} human rooms this round. Other players should look away; no current-round action has been revealed.`;
     $('#btnEnterRoom').focus();
   }
 
@@ -453,7 +501,11 @@
   }
 
   function resolveCurrentRound() {
-    E.submitAIPlans(game);
+    const npcResult = E.submitNPCPlans(game);
+    if (!npcResult.ok) {
+      openModal('Resolution blocked', `<p>${escapeHtml(npcResult.reason)}</p>`);
+      return;
+    }
     const result = E.resolveRound(game);
     if (!result.ok) {
       openModal('Resolution blocked', `<p>${escapeHtml(result.reason)}</p>`);
@@ -485,6 +537,7 @@
     openModal('How to play The Burr', `
       <p><b>Goal:</b> secure your real interests and keep your leadership, society, and future leverage intact. The table also receives a shared world-viability score; a narrow national win can coexist with collective catastrophe.</p>
       <div class="how-grid">
+        <div class="how-card"><b>Solo command</b><span>Choose one human role; four deterministic, rules-based NPCs fill the other rooms. Structured actions—not free text—carry bargaining signals through the engine.</span></div>
         <div class="how-card"><b>1 · Negotiate</b><span>Talk openly between rounds. Private side conversations are allowed, but only encoded actions become mechanically binding.</span></div>
         <div class="how-card"><b>2 · Enter privately</b><span>Pass the device. Each human sees their true stakes, sacrifice ceiling, faction pressure, assets, and backchannel inbox.</span></div>
         <div class="how-card"><b>3 · Choose two actions</b><span>Select one public action and one private action. All current-round plans remain sealed until everyone has submitted.</span></div>
@@ -494,8 +547,9 @@
         <div class="how-card"><b>Authoritarian trade-off</b><span>Russia and Belarus pay lower immediate public audience costs, but elite challenges are hidden and can become abrupt regime threats.</span></div>
         <div class="how-card"><b>Face and secrecy</b><span>UN escrow, inspection, joint language, and secret annexes can make retreat survivable. Secret concessions may later leak.</span></div>
       </div>
-      <div class="worked"><b>Worked example:</b> Belarus publicly calls the crossing existential, although its real existential stake is regime survival. It privately offers withdrawal for a Russian guarantee. If Russia independently selects the matching conditional guarantee, the package forms. The crossing de-escalates, but Russian entanglement rises and the hidden concession acquires leak risk.</div>
-      <div class="modal-actions"><button class="secondary" id="howClose" type="button">Return</button><button class="primary" id="howTour" type="button">Show me the first round</button></div>`);
+      <div class="worked"><b>Mechanism example:</b> one actor may overclaim a negotiable issue in public while privately offering restraint for protection. A bargain forms only if the intended counterpart independently chooses the matching conditional offer. The ladder may fall while entanglement and future leak risk rise.</div>
+      <p><b>Spoiler notice:</b> the observer demo reveals one scripted path through all five private rooms. Skip it before table play if you want every hidden priority to remain unknown.</p>
+      <div class="modal-actions"><button class="secondary" id="howClose" type="button">Return</button><button class="primary" id="howTour" type="button">Open observer demo</button></div>`);
     $('#howClose').addEventListener('click', closeModal);
     $('#howTour').addEventListener('click', () => { closeModal(); startGuidedRound(); });
   }
@@ -503,18 +557,24 @@
   function showWelcome() {
     const saved = loadSavedGame();
     openModal('Welcome to Situation Room', `
-      <p><b>The Burr</b> is the first multiplayer vertical slice: Belarus, Russia, the United States, the European Union, and the United Nations share one crisis while managing five different internal rooms.</p>
+      <p><b>The Burr</b> is a solo or multiplayer vertical slice: Belarus, Russia, the United States, the European Union, and the United Nations share one crisis while managing five different internal rooms.</p>
       <div class="worked"><b>The central experience:</b> “I knew which compromise could work, but I could not say it publicly.”</div>
-      <p>Use five humans for the full table, two humans for the proxy–patron core, or let the AI demonstrate the system.</p>
+      <p>Play alone as any one role against four rules-based NPCs, use two humans for the proxy–patron core, bring five humans for the full table, or observe an all-NPC demonstration.</p>
       <div class="modal-actions">
         ${saved ? '<button class="secondary" id="welcomeResume" type="button">Resume saved table</button>' : ''}
         <button class="secondary" id="welcomeHow" type="button">How to play</button>
-        <button class="primary" id="welcomeTour" type="button">Show me a round</button>
+        <button class="secondary" id="welcomeTour" type="button">Observer demo (spoilers)</button>
+        <button class="primary" id="welcomeSolo" type="button">Play solo</button>
         <button class="secondary" id="welcomeSetup" type="button">Set up table</button>
       </div>`);
     if (saved) $('#welcomeResume').addEventListener('click', () => resumeGame(saved));
     $('#welcomeHow').addEventListener('click', showHowToPlay);
     $('#welcomeTour').addEventListener('click', () => { closeModal(); startGuidedRound(); });
+    $('#welcomeSolo').addEventListener('click', () => {
+      applyPreset('solo');
+      closeModal();
+      $('#soloRoleSelect').focus();
+    });
     $('#welcomeSetup').addEventListener('click', closeModal);
   }
 
@@ -640,7 +700,7 @@
       <ul>${dealList}</ul>
       <div class="worked"><b>Interpretation:</b> compare the strategic score with leadership survival, national welfare, and world viability. A government can “win” its narrow objective while damaging the constituency it claims to protect.</div>
       <div class="modal-actions"><button class="secondary" id="debriefExport" type="button">Export replay JSON</button><button class="secondary" id="debriefFeedback" type="button">Give playtest feedback</button><button class="primary" id="debriefNew" type="button">New table</button></div>`);
-    $('#debriefExport').addEventListener('click', exportReplay);
+    $('#debriefExport').addEventListener('click', () => exportReplay(true));
     $('#debriefFeedback').addEventListener('click', () => window.open(FEEDBACK_URL, '_blank', 'noopener,noreferrer'));
     $('#debriefNew').addEventListener('click', () => { closeModal(); newTable(); });
   }
@@ -655,9 +715,9 @@
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  function exportReplay() {
+  function exportReplay(revealHidden) {
     if (!game) return;
-    const data = E.exportReplay(game);
+    const data = E.exportReplay(game, { revealHidden: Boolean(revealHidden) });
     const blob = new Blob([data], { type: 'application/json' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
@@ -674,6 +734,10 @@
     $('#timerDisplay').textContent = `${minutes}:${seconds}`;
   }
 
+  function timerStartLabel() {
+    return game && game.mode === 'solo' ? 'Start 2:00 decision timer' : 'Start 2:00 table timer';
+  }
+
   function startTimer() {
     if (timerHandle) {
       clearTimer();
@@ -681,7 +745,7 @@
     }
     timerSeconds = 120;
     $('#timerDisplay').hidden = false;
-    $('#btnTimer').textContent = 'Stop table timer';
+    $('#btnTimer').textContent = game && game.mode === 'solo' ? 'Stop decision timer' : 'Stop table timer';
     updateTimerDisplay();
     timerHandle = window.setInterval(() => {
       timerSeconds -= 1;
@@ -697,11 +761,12 @@
   function clearTimer(hide) {
     if (timerHandle) window.clearInterval(timerHandle);
     timerHandle = null;
-    $('#btnTimer').textContent = 'Start 2:00 table timer';
+    $('#btnTimer').textContent = timerStartLabel();
     if (hide !== false) $('#timerDisplay').hidden = true;
   }
 
   function wireEvents() {
+    $('#presetSolo').addEventListener('click', () => applyPreset('solo'));
     $('#presetFive').addEventListener('click', () => applyPreset('five'));
     $('#presetTwo').addEventListener('click', () => applyPreset('two'));
     $('#presetObserver').addEventListener('click', () => applyPreset('observer'));
@@ -710,7 +775,11 @@
     $('#btnShowMe').addEventListener('click', startGuidedRound);
     $('#btnPlan').addEventListener('click', beginPlanning);
     $('#btnTimer').addEventListener('click', startTimer);
-    $('#btnExport').addEventListener('click', exportReplay);
+    $('#btnExport').addEventListener('click', () => exportReplay(false));
+    $('#soloRoleSelect').addEventListener('change', (event) => {
+      setupHumans = new Set([event.target.value]);
+      renderSetup();
+    });
     $('#btnEnterRoom').addEventListener('click', enterRoom);
     $('#btnLeaveRoom').addEventListener('click', leaveRoom);
     $('#btnSealPlan').addEventListener('click', sealPlan);

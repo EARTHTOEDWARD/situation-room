@@ -18,7 +18,7 @@ Build the smallest playable multiplayer system that can produce:
 **Scenario:** The Burr  
 **Roles:** Belarus, Russia, United States, European Union, United Nations  
 **Rounds:** six  
-**Interface:** single-device pass-and-play with optional AI seats
+**Interface:** one-human Solo command or single-device pass-and-play, with rules-based NPC seats
 
 The solo Gulf 2026 game is retained as a training route from the landing page.
 
@@ -42,18 +42,21 @@ The solo Gulf 2026 game is retained as a training route from the landing page.
 - Public threats have a two-round shelf life and lose credibility when unbacked.
 - High rungs weld behind escalation and require face-saving capacity for descent.
 - The replay seed and exported history make trajectories auditable.
+- A single human can occupy any role while four deterministic NPCs complete legal sealed plans and carry the changing crisis state across all six rounds.
 
 ## Known limitations
 
 - Privacy is social, not network-authenticated.
 - Free-form promises are not parsed; players must encode binding terms using the available private actions.
-- AI is scenario-specific and heuristic, not strategic search.
+- NPC policy is scenario-specific and heuristic, not strategic search or a language model.
 - The shared ladder compresses several domains that may later need separate but coupled tracks.
 - Only one role-specific scenario is implemented.
 - The debrief scores interests operationally but has not yet been calibrated through human play data.
 - No accessibility audit beyond keyboard modal controls, reduced-motion support, and responsive layout has been completed.
 
 ## Next decisive witness
+
+Solo and observer runs remain synthetic diagnostics for mechanics, pacing, regression checks, and onboarding. They do not replace this human witness.
 
 Run at least three uncoached five-player sessions and record:
 

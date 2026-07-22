@@ -5,7 +5,8 @@
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
   'use strict';
 
-  const VERSION = '0.1.0';
+  const VERSION = '0.2.0';
+  const NPC_POLICY_VERSION = 'burr-rules-v1';
   const TEMP = Object.freeze({ NEGOTIABLE: 1, VITAL: 2, EXISTENTIAL: 3 });
   const TEMP_NAME = Object.freeze({ 1: 'NEGOTIABLE', 2: 'VITAL', 3: 'EXISTENTIAL' });
   const ISSUE = Object.freeze({
@@ -42,6 +43,7 @@
   const ROLE_DEFS = Object.freeze({
     BELARUS: {
       id: 'BELARUS', name: 'Belarus', short: 'BY', regimeType: 'authoritarian', accent: '#d7b548',
+      publicBrief: 'A catalytic proxy with local access and limited aggregate power. Turn the border incident into leverage without losing room to manoeuvre.',
       brief: 'You are the catalytic proxy: weak in aggregate power, strong in the ability to manufacture patron commitment. Your real priority is regime survival, not the crossing itself.',
       factions: {
         hawk: { name: 'Security Hardliners', recommendation: 'Create facts before outsiders can coordinate.' },
@@ -60,6 +62,7 @@
     },
     RUSSIA: {
       id: 'RUSSIA', name: 'Russia', short: 'RU', regimeType: 'authoritarian', accent: '#e06a58',
+      publicBrief: 'A patron balancing strategic depth and proxy control against the risk that ambiguous support becomes an unwanted public obligation.',
       brief: 'You are the patron. Belarus can entrap you by converting vague support into public obligation. You need strategic depth and credible guarantees without being dragged into an alliance war.',
       factions: {
         hawk: { name: 'Security Council Hawks', recommendation: 'Back the proxy visibly or every other guarantee weakens.' },
@@ -78,6 +81,7 @@
     },
     US: {
       id: 'US', name: 'United States', short: 'US', regimeType: 'democracy', accent: '#64a6e8',
+      publicBrief: 'An alliance power balancing deterrence and credibility against the danger that reassurance becomes an automatic escalation commitment.',
       brief: 'You must preserve alliance credibility while avoiding a rhetorical trap that turns reassurance into an automatic war commitment.',
       factions: {
         hawk: { name: 'Joint Chiefs', recommendation: 'Make deterrence visible before the local balance closes.' },
@@ -96,6 +100,7 @@
     },
     EU: {
       id: 'EU', name: 'European Union', short: 'EU', regimeType: 'coalition', accent: '#7bb9c8',
+      publicBrief: 'A coalition using sanctions, market access, and legitimacy while every crisis move also tests member-state unity.',
       brief: 'Your leverage comes from market access, sanctions, and legitimacy. Your constraint is that every escalation test is also a test of member-state unity.',
       factions: {
         hawk: { name: 'Eastern Security Bloc', recommendation: 'Impose a cost before border revision becomes normalised.' },
@@ -114,6 +119,7 @@
     },
     UN: {
       id: 'UN', name: 'United Nations', short: 'UN', regimeType: 'institution', accent: '#50d6d1',
+      publicBrief: 'An institution trying to construct verified, sequenced exits without military forces of its own.',
       brief: 'You do not command forces. You manufacture viable exits: quiet rooms, verification, escrow, sequencing, and public language that lets everyone claim partial success.',
       factions: {
         hawk: { name: 'Charter Legalists', recommendation: 'Name the breach clearly or institutional credibility dissolves.' },
@@ -195,6 +201,7 @@
       { id: 'N_QUIET_ROOM', label: 'Open a quiet room', alignment: 'statesman', type: 'quietRoom', targets: ['BELARUS', 'RUSSIA', 'US', 'EU'], assetCost: { id: 'QUIET_ROOM', amount: 1 }, desc: 'Probe one actor’s real wound through private conditional questions.', privateText: 'The UN opens a protected quiet channel to test the target’s real priority.' },
       { id: 'N_INSPECTION_MISSION', label: 'Draft an inspection mission', alignment: 'statesman', type: 'inspection', targets: ['BELARUS'], assetCost: { id: 'INSPECTION', amount: 1 }, desc: 'Create verified compliance that can substitute for trust.', privateText: 'The UN drafts a monitored inspection and withdrawal mission.' },
       { id: 'N_SECRET_ANNEX', label: 'Draft a secret annex', alignment: 'survival', type: 'secretAnnex', assetCost: { id: 'COMMUNIQUE', amount: 1 }, desc: 'Hide one unpalatable concession and reduce its immediate audience cost.', privateText: 'The UN prepares a classified annex to protect an unpalatable concession.' },
+      { id: 'N_MAINTAIN_CHANNELS', label: 'Maintain liaison channels', alignment: 'survival', type: 'maintainChannels', desc: 'Keep routine contacts alive without spending another scarce mediation asset.', privateText: 'The UN maintains routine liaison channels but commits no scarce mediation asset.' },
     ],
   });
 
@@ -274,7 +281,9 @@
     });
     return {
       version: VERSION,
+      npcPolicyVersion: NPC_POLICY_VERSION,
       scenario: 'THE BURR',
+      mode: humanRoles.size === 0 ? 'observer' : humanRoles.size === 1 ? 'solo' : 'table',
       seed: String(seed),
       rngState: hashSeed(seed),
       round: 1,
@@ -1068,22 +1077,48 @@
     return choose('statesman', PUBLIC_ACTIONS[roleId][0].id, PRIVATE_ACTIONS[roleId][0].id, null);
   }
 
-  function submitAIPlans(game) {
+  function findLegalFallbackPlan(game, roleId) {
+    const factions = ['survival', 'statesman', 'hawk'];
+    const publicActions = getPublicActions(game, roleId);
+    const privateActions = getPrivateActions(game, roleId);
+    for (const faction of factions) {
+      for (const pub of publicActions) {
+        for (const priv of privateActions) {
+          const targets = priv.targets && priv.targets.length ? priv.targets : [null];
+          for (const target of targets) {
+            const plan = { faction, publicAction: pub.id, privateAction: priv.id, target };
+            if (validatePlan(game, roleId, plan).ok) return plan;
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  function submitNPCPlans(game) {
+    const submitted = [];
     ROLE_ORDER.forEach((roleId) => {
       const role = game.roles[roleId];
       if (!role.human && !role.eliminated && !game.plans[roleId]) {
         const plan = autoPlan(game, roleId);
         const checked = validatePlan(game, roleId, plan);
-        if (checked.ok) game.plans[roleId] = plan;
-        else {
-          const pub = getPublicActions(game, roleId).find((action) => action.available);
-          const priv = getPrivateActions(game, roleId).find((action) => action.available);
-          const target = priv && priv.targets && priv.targets.length ? priv.targets[0] : null;
-          game.plans[roleId] = { faction: 'survival', publicAction: pub.id, privateAction: priv.id, target };
-        }
+        const legalPlan = checked.ok ? plan : findLegalFallbackPlan(game, roleId);
+        if (!legalPlan) return;
+        game.plans[roleId] = legalPlan;
+        submitted.push(roleId);
       }
     });
+    const blockedRole = ROLE_ORDER.find((roleId) => {
+      const role = game.roles[roleId];
+      return !role.human && !role.eliminated && !game.plans[roleId];
+    });
+    return blockedRole
+      ? { ok: false, reason: `${game.roles[blockedRole].name} has no complete legal NPC plan.` }
+      : { ok: true, submitted };
   }
+
+  // Backward-compatible alias for public-alpha replays and external probes.
+  const submitAIPlans = submitNPCPlans;
 
   function submitGuidedPlans(game) {
     ROLE_ORDER.forEach((roleId) => {
@@ -1123,23 +1158,54 @@
     ];
   }
 
-  function exportReplay(game) {
+  function exportReplay(game, options) {
+    const revealHidden = Boolean(options && options.revealHidden);
+    const roundHistory = revealHidden
+      ? deepClone(game.roundHistory)
+      : game.roundHistory.map((round) => {
+        const publicPlans = {};
+        Object.entries(round.plans || {}).forEach(([roleId, plan]) => {
+          publicPlans[roleId] = { publicAction: plan.publicAction };
+        });
+        // Build the public replay from an allow-list so new private resolution
+        // fields cannot silently leak into an active-game export.
+        return {
+          round: round.round,
+          start: {
+            rung: round.start.rung,
+            media: round.start.media,
+            entanglement: round.start.entanglement,
+          },
+          plans: publicPlans,
+          end: {
+            rung: round.end.rung,
+            media: round.end.media,
+            entanglement: round.end.entanglement,
+          },
+        };
+      });
+    const final = {
+      rung: game.ladder.rung,
+      media: game.media,
+      entanglement: game.entanglement,
+    };
+    if (revealHidden) final.score = scoreGame(game);
     return JSON.stringify({
       version: game.version,
+      npcPolicyVersion: game.npcPolicyVersion || NPC_POLICY_VERSION,
       scenario: game.scenario,
       seed: game.seed,
-      roundHistory: game.roundHistory,
-      final: {
-        rung: game.ladder.rung,
-        media: game.media,
-        entanglement: game.entanglement,
-        score: scoreGame(game),
-      },
+      mode: game.mode,
+      humanRoles: ROLE_ORDER.filter((roleId) => game.roles[roleId].human),
+      visibility: revealHidden ? 'debrief' : 'public',
+      roundHistory,
+      final,
     }, null, 2);
   }
 
   return Object.freeze({
     VERSION,
+    NPC_POLICY_VERSION,
     TEMP,
     TEMP_NAME,
     ISSUE,
@@ -1159,6 +1225,7 @@
     submitPlan,
     allPlansSubmitted,
     autoPlan,
+    submitNPCPlans,
     submitAIPlans,
     submitGuidedPlans,
     resolveRound,

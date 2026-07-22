@@ -9,6 +9,24 @@ function planAll(game, plans) {
   });
 }
 
+function firstLegalPlan(game, roleId) {
+  const factions = ['survival', 'statesman', 'hawk'];
+  const publicActions = E.getPublicActions(game, roleId);
+  const privateActions = E.getPrivateActions(game, roleId);
+  for (const faction of factions) {
+    for (const pub of publicActions) {
+      for (const priv of privateActions) {
+        const targets = priv.targets && priv.targets.length ? priv.targets : [null];
+        for (const target of targets) {
+          const plan = { faction, publicAction: pub.id, privateAction: priv.id, target };
+          if (E.validatePlan(game, roleId, plan).ok) return plan;
+        }
+      }
+    }
+  }
+  return null;
+}
+
 (function testInitialState() {
   const game = E.createGame({ humanRoles: E.ROLE_ORDER, seed: 'unit-initial' });
   assert.equal(game.ladder.rung, 3);
@@ -131,7 +149,7 @@ function planAll(game, plans) {
   assert.ok(game.publicLog.some((entry) => /internal hard-line faction/.test(entry.text)));
 })();
 
-(function testFullAISixRoundRun() {
+(function testFullNPCSixRoundRun() {
   const game = E.createGame({ humanRoles: [], seed: 'ai-six-rounds' });
   let safety = 0;
   while (!game.over && safety < 10) {
@@ -146,7 +164,140 @@ function planAll(game, plans) {
   assert.ok(score.worldViability >= 0 && score.worldViability <= 100);
   const replay = JSON.parse(E.exportReplay(game));
   assert.equal(replay.scenario, 'THE BURR');
+  assert.equal(replay.npcPolicyVersion, E.NPC_POLICY_VERSION);
   assert.equal(replay.roundHistory.length, game.roundHistory.length);
 })();
 
-console.log('9 engine tests passed.');
+(function testSoloPlanningLeavesExactlyOneHumanPlanOpenAndIsIdempotent() {
+  E.ROLE_ORDER.forEach((humanRole) => {
+    const game = E.createGame({ humanRoles: [humanRole], seed: `solo-open-${humanRole}` });
+    assert.equal(game.mode, 'solo');
+    const result = E.submitNPCPlans(game);
+    assert.equal(result.ok, true);
+    assert.equal(Object.keys(game.plans).length, 4);
+    assert.equal(game.plans[humanRole], undefined);
+    Object.entries(game.plans).forEach(([roleId, plan]) => assert.equal(E.validatePlan(game, roleId, plan).ok, true));
+    const before = JSON.stringify({ plans: game.plans, rngState: game.rngState });
+    assert.equal(E.submitNPCPlans(game).ok, true);
+    assert.equal(JSON.stringify({ plans: game.plans, rngState: game.rngState }), before);
+    const humanPlan = firstLegalPlan(game, humanRole);
+    assert.ok(humanPlan, `${humanRole} should have a legal human plan`);
+    assert.equal(E.submitPlan(game, humanRole, humanPlan).ok, true);
+    assert.equal(E.allPlansSubmitted(game), true);
+  });
+})();
+
+(function testNpcFallbackAlwaysFindsACompleteLegalPlan() {
+  const exhausted = E.createGame({ humanRoles: [], seed: 'npc-zero-assets' });
+  E.ROLE_ORDER.forEach((roleId) => {
+    Object.values(exhausted.roles[roleId].assets).forEach((asset) => { asset.clock = 0; });
+  });
+  assert.equal(E.submitNPCPlans(exhausted).ok, true);
+  E.ROLE_ORDER.forEach((roleId) => assert.equal(E.validatePlan(exhausted, roleId, exhausted.plans[roleId]).ok, true));
+  assert.equal(exhausted.plans.UN.privateAction, 'N_MAINTAIN_CHANNELS');
+
+  const combined = E.createGame({ humanRoles: ['BELARUS'], seed: 'npc-combined-fallback' });
+  combined.roles.RUSSIA.assets.MOBILIZATION.clock = 0;
+  combined.roles.US.assets.REINFORCEMENT.clock = 1;
+  combined.roles.US.assets.INTELLIGENCE.clock = 0;
+  assert.equal(E.submitNPCPlans(combined).ok, true);
+  assert.equal(E.validatePlan(combined, 'US', combined.plans.US).ok, true);
+  assert.notDeepEqual(
+    [combined.plans.US.publicAction, combined.plans.US.privateAction],
+    ['U_REINFORCE', 'U_PREPARE_REINFORCEMENT']
+  );
+})();
+
+(function testSoloCorpusCompletesForEveryHumanRole() {
+  E.ROLE_ORDER.forEach((humanRole) => {
+    for (let index = 0; index < 40; index += 1) {
+      const game = E.createGame({ humanRoles: [humanRole], seed: `solo-${humanRole}-${index}` });
+      let guard = 0;
+      while (!game.over && guard < 8) {
+        const npcResult = E.submitNPCPlans(game);
+        assert.equal(npcResult.ok, true, `${humanRole} seed ${index}: ${npcResult.reason || 'NPC planning failed'}`);
+        Object.entries(game.plans).forEach(([roleId, plan]) => {
+          assert.equal(E.validatePlan(game, roleId, plan).ok, true, `${humanRole} seed ${index}: invalid ${roleId} plan`);
+        });
+        if (!game.roles[humanRole].eliminated) {
+          const humanPlan = firstLegalPlan(game, humanRole);
+          assert.ok(humanPlan, `${humanRole} seed ${index}: no legal human plan`);
+          assert.equal(E.submitPlan(game, humanRole, humanPlan).ok, true);
+        }
+        assert.equal(E.resolveRound(game).ok, true);
+        guard += 1;
+      }
+      assert.equal(game.over, true, `${humanRole} seed ${index}: did not terminate`);
+      assert.ok(game.roundHistory.length >= 1 && game.roundHistory.length <= 6);
+      E.ROLE_ORDER.forEach((roleId) => {
+        const role = game.roles[roleId];
+        assert.ok(role.leadership >= 0 && role.leadership <= 10);
+        assert.ok(role.welfare >= 0 && role.welfare <= 10);
+        assert.ok(role.credibility >= 0 && role.credibility <= 8);
+        assert.ok(role.wiggle >= 0 && role.wiggle <= 4);
+        Object.values(role.assets).forEach((asset) => assert.ok(asset.clock >= 0 && asset.clock <= asset.max));
+      });
+    }
+  });
+})();
+
+(function testHumanChoiceCausesRatherThanScriptsSoloDeal() {
+  const makeGame = () => E.createGame({ humanRoles: ['BELARUS'], seed: 'solo-causal-choice' });
+  const matching = makeGame();
+  const counterfactual = makeGame();
+  assert.equal(E.submitNPCPlans(matching).ok, true);
+  assert.equal(E.submitNPCPlans(counterfactual).ok, true);
+  assert.deepEqual(matching.plans, counterfactual.plans);
+  assert.equal(matching.plans.RUSSIA.privateAction, 'R_CONDITIONAL_GUARANTEE');
+  assert.equal(E.submitPlan(matching, 'BELARUS', {
+    faction: 'statesman', publicAction: 'B_STRATEGIC_AMBIGUITY', privateAction: 'B_SEEK_GUARANTEE', target: 'RUSSIA',
+  }).ok, true);
+  assert.equal(E.submitPlan(counterfactual, 'BELARUS', {
+    faction: 'survival', publicAction: 'B_STRATEGIC_AMBIGUITY', privateAction: 'B_REQUEST_ESCROW', target: 'UN',
+  }).ok, true);
+  assert.equal(E.resolveRound(matching).ok, true);
+  assert.equal(E.resolveRound(counterfactual).ok, true);
+  assert.ok(matching.secretDeals.some((deal) => /Patrol withdrawal/.test(deal.title)));
+  assert.equal(counterfactual.secretDeals.some((deal) => /Patrol withdrawal/.test(deal.title)), false);
+})();
+
+(function testActiveReplayRedactsHiddenPlansUntilDebrief() {
+  const game = E.createGame({ humanRoles: [], seed: 'public-replay-redaction', guided: true });
+  E.submitGuidedPlans(game);
+  assert.equal(E.resolveRound(game).ok, true);
+  const publicReplay = JSON.parse(E.exportReplay(game));
+  assert.equal(publicReplay.visibility, 'public');
+  Object.values(publicReplay.roundHistory[0].plans).forEach((plan) => {
+    assert.deepEqual(Object.keys(plan), ['publicAction']);
+  });
+  assert.equal(publicReplay.roundHistory[0].end.deals, undefined);
+  assert.equal(publicReplay.final.score, undefined);
+  assert.equal(JSON.stringify(publicReplay).includes('Patrol withdrawal for regime assurance'), false);
+  assert.equal(JSON.stringify(publicReplay).includes('B_SEEK_GUARANTEE'), false);
+  const debriefReplay = JSON.parse(E.exportReplay(game, { revealHidden: true }));
+  assert.equal(debriefReplay.visibility, 'debrief');
+  assert.equal(debriefReplay.roundHistory[0].plans.BELARUS.privateAction, 'B_SEEK_GUARANTEE');
+  assert.equal(debriefReplay.roundHistory[0].plans.BELARUS.faction, 'hawk');
+  assert.ok(debriefReplay.roundHistory[0].end.deals.includes('Patrol withdrawal for regime assurance'));
+  assert.ok(debriefReplay.final.score.roles.BELARUS);
+})();
+
+(function testToolbarReplayStaysPublicAfterGameOver() {
+  const game = E.createGame({ humanRoles: [], seed: 'post-game-public-replay', guided: true, maxRounds: 1 });
+  E.submitGuidedPlans(game);
+  assert.equal(E.resolveRound(game).ok, true);
+  assert.equal(game.over, true);
+
+  const toolbarReplay = JSON.parse(E.exportReplay(game));
+  assert.equal(toolbarReplay.visibility, 'public');
+  assert.equal(toolbarReplay.final.score, undefined);
+  assert.equal(toolbarReplay.roundHistory[0].end.deals, undefined);
+  assert.equal(JSON.stringify(toolbarReplay).includes('B_SEEK_GUARANTEE'), false);
+
+  const debriefReplay = JSON.parse(E.exportReplay(game, { revealHidden: true }));
+  assert.equal(debriefReplay.visibility, 'debrief');
+  assert.equal(debriefReplay.roundHistory[0].plans.BELARUS.privateAction, 'B_SEEK_GUARANTEE');
+  assert.ok(debriefReplay.final.score.roles.BELARUS);
+})();
+
+console.log('14 engine tests passed.');

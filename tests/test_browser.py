@@ -11,7 +11,13 @@ except ImportError:  # pragma: no cover
 
 ROOT = Path(__file__).resolve().parents[1]
 BURR = ROOT / "the-burr"
-CHROMIUM = shutil.which("chromium") or shutil.which("chromium-browser") or shutil.which("google-chrome")
+MAC_CHROME = Path("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome")
+CHROMIUM = (
+    shutil.which("chromium")
+    or shutil.which("chromium-browser")
+    or shutil.which("google-chrome")
+    or (str(MAC_CHROME) if MAC_CHROME.is_file() else None)
+)
 
 
 def inline_page() -> str:
@@ -23,6 +29,17 @@ def inline_page() -> str:
     html = html.replace('<script src="engine.js"></script>', f"<script>{engine}</script>")
     html = html.replace('<script src="app.js"></script>', f"<script>{app}</script>")
     return html
+
+
+def standalone_page() -> str:
+    html = (BURR / "index.html").read_text(encoding="utf-8")
+    css = (BURR / "styles.css").read_text(encoding="utf-8")
+    engine = (BURR / "engine.js").read_text(encoding="utf-8")
+    app = (BURR / "app.js").read_text(encoding="utf-8")
+    html = html.replace('<link rel="stylesheet" href="styles.css">', f"<style>\n{css}\n</style>")
+    html = html.replace('<script src="engine.js"></script>', f"<script>\n{engine}\n</script>")
+    html = html.replace('<script src="app.js"></script>', f"<script>\n{app}\n</script>")
+    return html.replace('href="../index.html"', 'href="index.html"')
 
 
 @unittest.skipUnless(sync_playwright, "Python Playwright required")
@@ -116,6 +133,45 @@ class BrowserTests(unittest.TestCase):
         finally:
             page.close()
 
+    def test_solo_preset_opens_one_spoiler_free_human_room(self) -> None:
+        page, errors = self.make_page()
+        try:
+            page.click("#welcomeSolo")
+            self.assertEqual(page.locator('.seat-toggle [data-seat="human"].active').count(), 1)
+            self.assertEqual(page.locator('.seat-toggle [data-seat="npc"].active').count(), 4)
+            self.assertFalse(page.locator("#soloRoleField").evaluate("el => el.hidden"))
+            self.assertEqual(page.locator("#soloRoleSelect").input_value(), "UN")
+            self.assertNotIn("real priority is regime survival", page.locator("#roleSetup").inner_text().lower())
+
+            page.select_option("#soloRoleSelect", "BELARUS")
+            self.assertTrue(page.locator('[data-role="BELARUS"] [data-seat="human"]').evaluate("el => el.classList.contains('active')"))
+            page.click("#btnStart")
+            opening_text = page.locator("#modalBody").inner_text().upper()
+            self.assertIn("SOLO COMMAND", opening_text)
+            self.assertIn("RULES-BASED NPCS", opening_text)
+            page.click("#modalBegin")
+            self.assertEqual(page.locator("#btnPlan").inner_text(), "PLAN BELARUS'S MOVE")
+            page.click("#btnPlan")
+            self.assertEqual(page.locator("#handoffTitle").inner_text(), "ENTER YOUR BELARUS SITUATION ROOM")
+            self.assertEqual(page.evaluate("Object.keys(window.__SituationRoomApp.game.plans).length"), 4)
+            self.assertFalse(page.evaluate("Object.hasOwn(window.__SituationRoomApp.game.plans, 'BELARUS')"))
+
+            page.click("#btnEnterRoom")
+            self.assertIn("real priority is regime survival", page.locator("#roomBrief").inner_text().lower())
+            page.locator("#factionChoices .choice-card").nth(1).click()
+            page.locator("#publicChoices .choice-card:not(.disabled)").nth(3).click()
+            page.locator("#privateChoices .choice-card:not(.disabled)").nth(0).click()
+            page.click("#btnSealPlan")
+            page.wait_for_timeout(200)
+
+            self.assertEqual(page.locator("#modalTitle").inner_text(), "ROUND 1 RESOLVED")
+            self.assertEqual(page.evaluate("window.__SituationRoomApp.game.roundHistory.length"), 1)
+            self.assertEqual(page.evaluate("Object.keys(window.__SituationRoomApp.game.roundHistory[0].plans).length"), 5)
+            self.assertNotIn("Patrol withdrawal for regime assurance", page.locator("#publicLog").inner_text())
+            self.assertEqual(errors, [])
+        finally:
+            page.close()
+
     def test_observer_can_complete_and_open_debrief(self) -> None:
         page, errors = self.make_page()
         try:
@@ -177,10 +233,18 @@ class StaticReleaseTests(unittest.TestCase):
         self.assertIn('id="privacyLayer"', html)
         self.assertIn('id="factionChoices"', html)
         self.assertIn('id="tourLayer"', html)
+        self.assertIn('id="presetSolo"', html)
         self.assertIn("Patrol withdrawal for regime assurance", engine)
+        self.assertIn("N_MAINTAIN_CHANNELS", engine)
         self.assertIn("Incident deniability", engine)
         self.assertIn("resolveLeaks", engine)
         self.assertIn("bluffFatigue", engine)
+
+    def test_standalone_burr_matches_sources(self) -> None:
+        self.assertEqual(
+            (ROOT / "situation-room-the-burr.html").read_text(encoding="utf-8"),
+            standalone_page(),
+        )
 
 
 if __name__ == "__main__":
